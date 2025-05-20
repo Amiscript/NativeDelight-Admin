@@ -197,7 +197,7 @@ function App() {
             </button>
           </a>
         </div>
-        <div className="absolute   left-0 right-0">
+        <div className="absolute bottom-[-1]  left-0 right-0">
           <div className="flex items-center space-x-3 p-4 bg-gray-900 text-white rounded-lg">
             <Image
               src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e"
