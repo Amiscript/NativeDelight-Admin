@@ -2,15 +2,15 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
-import { format } from 'date-fns';
+// import { format } from 'date-fns';
 import {
-  Bell,
-  Settings as SettingsIcon,
+  // Bell,
+  // Settings as SettingsIcon,
   LogOut,
-  Upload,
-  ChevronRight,
-  Save,
-  Home
+  // Upload,
+  // ChevronRight,
+  // Save,
+  // Home
 } from 'lucide-react';
 
 interface MenuItem {
@@ -119,10 +119,10 @@ const App: React.FC = () => {
   };
 
   // Open edit modal with item
-  const handleEditModalOpen = (item: MenuItem) => {
-    setEditItem({ ...item });
-    setIsEditModalOpen(true);
-  };
+  // const handleEditModalOpen = (item: MenuItem) => {
+  //   setEditItem({ ...item });
+  //   setIsEditModalOpen(true);
+  // };
 
   // Save edit modal changes
   const handleEditModalSave = (e: React.FormEvent<HTMLFormElement>) => {

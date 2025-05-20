@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import { format } from 'date-fns';
 import {
-  Bell,
+  // Bell,
   Settings as SettingsIcon,
   LogOut,
   Upload,

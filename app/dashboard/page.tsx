@@ -5,17 +5,17 @@ import React from 'react';
 import { format } from 'date-fns';
 import {
   Search,
-  Bell,
-  Package,
+  // Bell,
+  // Package,
   LogOut,
   TrendingUp,
   ShoppingCart,
-  Star,
+  // Star,
   ArrowUp,
   ArrowDown,
   BarChart2,
   AlertTriangle,
-  Plus,
+  // Plus,
 } from 'lucide-react';
 import {
   LineChart,

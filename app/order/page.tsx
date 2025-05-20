@@ -3,9 +3,9 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import {
 
-  Settings as SettingsIcon,
+  // Settings as SettingsIcon,
   LogOut,
-  Upload,
+  // Upload,
  
 } from 'lucide-react';
 
