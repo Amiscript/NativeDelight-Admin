@@ -1,6 +1,15 @@
 "use client";
 import React, { useState } from 'react';
-import Image from 'next/image';
+import Image from 'next/image'
+import {
+  // Bell,
+  // Settings as SettingsIcon,
+  LogOut,
+  // Upload,
+  // ChevronRight,
+  // Save,
+  // Home
+} from 'lucide-react';
 
 interface Category {
   id: number;
@@ -185,27 +194,28 @@ const App: React.FC = () => {
       <div
         id="sidebar"
         className={`
-          fixed z-30 top-0 left-0 h-full w-64 bg-gray-800 text-white shadow-lg p-4 flex-shrink-0
+          fixed z-30 top-0 left-0 h-full w-64 bg-gray-900 text-white shadow-lg p-4 flex-shrink-0
           transition-transform duration-200
           -translate-x-full
           lg:translate-x-0 lg:static lg:block
         `}
         style={{ willChange: 'transform' }}
       >
-        <div className="p-4 border-b border-gray-700">
+        <div className="p-4 border-b bg-gray-900">
+          <h2 className="font-semibold">Category Menu </h2>
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-full bg-gray-600 flex items-center justify-center">
+            {/* <div className="w-10 h-10 rounded-full bg-gray-900 flex items-center justify-center">
               <i className="fas fa-user text-white"></i>
-            </div>
-            <div>
+            </div> */}
+            {/* <div>
               <h2 className="font-semibold">Admin User</h2>
               <p className="text-xs text-gray-400">Restaurant Manager</p>
-            </div>
+            </div> */}
           </div>
         </div>
         <nav className="mt-4">
           <div className="px-4 py-2 text-xs text-gray-400 uppercase">Main</div>
-          <a href="/*" className="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-700 cursor-pointer">
+          <a href="/dashboard" className="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-700 cursor-pointer">
             <i className="fas fa-tachometer-alt w-6"></i>
             <span>Dashboard</span>
           </a>
@@ -217,10 +227,10 @@ const App: React.FC = () => {
             <i className="fas fa-shopping-cart w-6"></i>
             <span>Orders</span>
           </a>
-          <a href="/category" className="flex items-center px-4 py-3 bg-gray-700 text-white cursor-pointer">
+          {/* <a href="/category" className="flex items-center px-4 py-3 bg-gray-700 text-white cursor-pointer">
             <i className="fas fa-tags w-6"></i>
             <span>Categories</span>
-          </a>
+          </a> */}
           <a href="user" className="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-700 cursor-pointer">
             <i className="fas fa-users w-6"></i>
             <span>Users</span>
@@ -229,6 +239,24 @@ const App: React.FC = () => {
             <i className="fas fa-cog w-6"></i>
             <span>Settings</span>
           </a>
+          <div className="absolute bottom-[-1] left-0 right-0">
+                    <div className="flex items-center space-x-3 p-4 bg-gray-900 text-white rounded-lg">
+                      <Image
+                        src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e"
+                        alt="Admin"
+                        width={40}
+                        height={40}
+                        className="h-10 w-10 rounded-full"
+                      />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">Admin User</p>
+                        <p className="text-x  text-white">admin@example.com</p>
+                      </div>
+                      <button>
+                        <LogOut className="h-5 w-5 text-gray-50" />
+                      </button>
+                    </div>
+                  </div>
         </nav>
       </div>
 

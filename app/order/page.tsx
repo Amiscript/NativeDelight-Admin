@@ -211,7 +211,8 @@ const App: React.FC = () => {
         `}
       >
         <div className="p-4 border-b border-gray-700">
-          <div className="flex items-center space-x-3">
+          <h2 className="font-semibold">Order Menu</h2>
+          {/* <div className="flex items-center space-x-3">
             <div className="w-10 h-10 rounded-full bg-gray-600 flex items-center justify-center">
               <i className="fas fa-user text-white"></i>
             </div>
@@ -219,7 +220,7 @@ const App: React.FC = () => {
               <h2 className="font-semibold">Admin User</h2>
               <p className="text-xs text-gray-400">Restaurant Manager</p>
             </div>
-          </div>
+          </div> */}
         </div>
         <nav className="mt-4">
           <div className="px-4 py-2 text-xs text-gray-400 uppercase">Main</div>

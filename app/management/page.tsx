@@ -550,7 +550,10 @@ const App: React.FC = () => {
                       <div className="flex justify-end space-x-2">
                         {/* Edit Icon */}
                         <button
-                          onClick={() => handleEdit(item)}
+                          onClick={() =>{ handleEdit(item)
+                          
+                            setIsEditModalOpen(true)
+                          }}
                           className="text-blue-600 hover:text-blue-900 cursor-pointer"
                           title="Edit"
                         >
