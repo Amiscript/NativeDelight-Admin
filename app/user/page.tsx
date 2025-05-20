@@ -192,12 +192,12 @@ function App() {
             </button>
           </a> */}
           <a href="/setting">
-            <button className="w-full flex items-center space-x-3 px-4 py-2 mb-8 text-white rounded-lg hover:bg-gray-500">
+            <button className="w-full flex items-center space-x-3 px-4 py-2 mb-4 text-white rounded-lg hover:bg-gray-500">
               <span>Settings</span>
             </button>
           </a>
         </div>
-        <div className="absolute bottom-[-1]  top-[-6] left-0 right-0">
+        <div className="absolute   left-0 right-0">
           <div className="flex items-center space-x-3 p-4 bg-gray-900 text-white rounded-lg">
             <Image
               src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e"
