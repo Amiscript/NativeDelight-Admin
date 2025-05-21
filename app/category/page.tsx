@@ -11,6 +11,13 @@ import {
   // Home
 } from 'lucide-react';
 
+// 1. Update the Category interface to include subcategories
+interface SubCategory {
+  id: number;
+  name: string;
+  description: string;
+}
+
 interface Category {
   id: number;
   name: string;
@@ -19,6 +26,7 @@ interface Category {
   status: string;
   createdAt: string;
   image: string;
+  subcategories?: SubCategory[]; // <-- Add this line
 }
 
 const App: React.FC = () => {
@@ -30,7 +38,11 @@ const App: React.FC = () => {
       itemsCount: 24,
       status: "Active",
       createdAt: "2025-03-15T10:30:00",
-      image: "https://public.readdy.ai/ai/img_res/30e227ef6bff0f87588204daf02466c2.jpg"
+      image: "https://public.readdy.ai/ai/img_res/30e227ef6bff0f87588204daf02466c2.jpg",
+      subcategories: [
+        { id: 1, name: "Rice Dishes", description: "All rice-based main dishes." },
+        { id: 2, name: "Pasta Dishes", description: "All pasta-based main dishes." }
+      ]
     },
     {
       id: 2,
@@ -72,6 +84,8 @@ const App: React.FC = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteCategoryId, setDeleteCategoryId] = useState<number | null>(null);
+  // 2. Add subcategory state for modal
+  const [newSubcategory, setNewSubcategory] = useState<Partial<SubCategory>>({ name: '', description: '' });
 
   const toggleCategoryDetails = (categoryId: number) => {
     setExpandedCategoryId(expandedCategoryId === categoryId ? null : categoryId);
@@ -83,7 +97,7 @@ const App: React.FC = () => {
       description: '',
       status: 'Active',
       image: ''
-    });
+     });
     setModalMode('add');
     setIsModalOpen(true);
   };
@@ -109,6 +123,33 @@ const App: React.FC = () => {
     }
   };
 
+  // 3. Add subcategory handlers
+  const handleAddSubcategory = () => {
+    if (!currentCategory) return;
+    if (!newSubcategory.name) return;
+    const updatedSubcategories = [
+      ...(currentCategory.subcategories || []),
+      {
+        id: Date.now(),
+        name: newSubcategory.name || '',
+        description: newSubcategory.description || ''
+      }
+    ];
+    setCurrentCategory({
+      ...currentCategory,
+      subcategories: updatedSubcategories
+    });
+    setNewSubcategory({ name: '', description: '' });
+  };
+
+  const handleDeleteSubcategory = (subId: number) => {
+    if (!currentCategory || !currentCategory.subcategories) return;
+    setCurrentCategory({
+      ...currentCategory,
+      subcategories: currentCategory.subcategories.filter(sub => sub.id !== subId)
+    });
+  };
+
   const handleSaveCategory = () => {
     if (!currentCategory) return;
     if (modalMode === 'add') {
@@ -120,7 +161,8 @@ const App: React.FC = () => {
         name: currentCategory.name || '',
         description: currentCategory.description || '',
         status: currentCategory.status || 'Active',
-        image: currentCategory.image || ''
+        image: currentCategory.image || '',
+        subcategories: currentCategory.subcategories || []
       } as Category;
       setCategories([...categories, newCategory]);
     } else if (currentCategory && currentCategory.id !== undefined) {
@@ -463,6 +505,13 @@ const App: React.FC = () => {
                       </span>
                     </div>
                     <p className="text-sm text-gray-600 mb-3 line-clamp-2">{category.description}</p>
+                    {/* 5. Show subcategories in grid/list/details
+                    // In the grid view card, after description: */}
+                    <p className="text-xs text-gray-500 mb-1">
+                      {category.subcategories && category.subcategories.length > 0
+                        ? `Subcategories: ${category.subcategories.map(sub => sub.name).join(', ')}`
+                        : 'No subcategories'}
+                    </p>
                     <div className="flex flex-col xs:flex-row xs:justify-between xs:items-center gap-2">
                       <div className="text-sm text-gray-500">
                         <i className="fas fa-utensils mr-1"></i> {category.itemsCount} items
@@ -509,6 +558,9 @@ const App: React.FC = () => {
                       <th scope="col" className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Created
                       </th>
+                      {/* <th scope="col" className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Subcategories
+                      </th> */}
                       <th scope="col" className="px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Actions
                       </th>
@@ -548,6 +600,13 @@ const App: React.FC = () => {
                           <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                             <div className="text-sm text-gray-900">{formatDate(category.createdAt)}</div>
                           </td>
+                          {/* <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                            <div className="text-xs text-gray-700">
+                              {category.subcategories && category.subcategories.length > 0
+                                ? category.subcategories.map(sub => sub.name).join(', ')
+                                : '—'}
+                            </div>
+                          </td> */}
                           <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <div className="flex justify-end space-x-2" onClick={(e) => e.stopPropagation()}>
                               <button
@@ -624,6 +683,22 @@ const App: React.FC = () => {
                                       </button>
                                     </div>
                                   </div>
+                                </div>
+                                {/* In the expanded details row: */}
+                                <div>
+                                  <h5 className="text-sm font-medium text-gray-700 mb-1">Subcategories</h5>
+                                  <ul className="list-disc list-inside text-sm text-gray-900">
+                                    {category.subcategories && category.subcategories.length > 0 ? (
+                                      category.subcategories.map(sub => (
+                                        <li key={sub.id}>
+                                          <span className="font-semibold">{sub.name}</span>
+                                          {sub.description ? `: ${sub.description}` : ''}
+                                        </li>
+                                      ))
+                                    ) : (
+                                      <li>No subcategories</li>
+                                    )}
+                                  </ul>
                                 </div>
                               </div>
                             </td>
@@ -723,16 +798,16 @@ const App: React.FC = () => {
                           {currentCategory?.image ? (
                             <div className="relative">
                               <Image
-                                src={currentCategory.image} 
+                                src={currentCategory.image}
                                 alt="Category preview"
-                                width={128} 
+                                width={128}
                                 height={128}
                                 className="h-32 w-32 object-cover object-top rounded-md"
                               />
-                              <button 
+                              <button
                                 type="button"
                                 className="absolute top-0 right-0 -mt-2 -mr-2 bg-red-600 text-white rounded-full p-1 hover:bg-red-700 focus:outline-none cursor-pointer"
-                                onClick={() => setCurrentCategory({...currentCategory, image: ''})}
+                                onClick={() => setCurrentCategory({ ...currentCategory, image: '' })}
                               >
                                 <i className="fas fa-times text-xs"></i>
                               </button>
@@ -742,13 +817,30 @@ const App: React.FC = () => {
                               <i className="fas fa-cloud-upload-alt text-2xl"></i>
                             </div>
                           )}
-                          <input
-                            type="text"
-                            placeholder="Paste image URL"
-                            className="block border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm w-full sm:w-auto"
-                            value={currentCategory?.image || ''}
-                            onChange={e => setCurrentCategory({...currentCategory, image: e.target.value})}
-                          />
+                          <div className="flex flex-col gap-2 w-full sm:w-auto">
+                            <input
+                              type="text"
+                              placeholder="Paste image URL"
+                              className="block border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                              value={currentCategory?.image || ''}
+                              onChange={e => setCurrentCategory({ ...currentCategory, image: e.target.value })}
+                            />
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="block border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                              onChange={e => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  const reader = new FileReader();
+                                  reader.onloadend = () => {
+                                    setCurrentCategory({ ...currentCategory, image: reader.result as string });
+                                  };
+                                  reader.readAsDataURL(file);
+                                }
+                              }}
+                            />
+                          </div>
                         </div>
                       </div>
                       <div>
@@ -762,6 +854,48 @@ const App: React.FC = () => {
                           <option value="Active">Active</option>
                           <option value="Inactive">Inactive</option>
                         </select>
+                      </div>
+                      {/* 6. In the Add/Edit Modal, add subcategory management UI before the Save/Cancel buttons: */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Subcategories</label>
+                        <div className="space-y-2">
+                          {(currentCategory?.subcategories || []).map((sub, ) => (
+                            <div key={sub.id} className="flex items-center space-x-2">
+                              <span className="text-sm font-semibold">{sub.name}</span>
+                              <span className="text-xs text-gray-500">{sub.description}</span>
+                              <button
+                                type="button"
+                                className="text-red-500 hover:text-red-700 text-xs"
+                                onClick={() => handleDeleteSubcategory(sub.id)}
+                              >
+                                <i className="fas fa-times"></i>
+                              </button>
+                            </div>
+                          ))}
+                          <div className="flex flex-col sm:flex-row gap-2 mt-2">
+                            <input
+                              type="text"
+                              placeholder="Subcategory name"
+                              className="border border-gray-300 rounded-md py-1 px-2 text-sm"
+                              value={newSubcategory.name || ''}
+                              onChange={e => setNewSubcategory({ ...newSubcategory, name: e.target.value })}
+                            />
+                            <input
+                              type="text"
+                              placeholder="Description"
+                              className="border border-gray-300 rounded-md py-1 px-2 text-sm"
+                              value={newSubcategory.description || ''}
+                              onChange={e => setNewSubcategory({ ...newSubcategory, description: e.target.value })}
+                            />
+                            <button
+                              type="button"
+                              className="bg-green-600 text-white px-2 py-1 rounded-md text-xs"
+                              onClick={handleAddSubcategory}
+                            >
+                              Add
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>

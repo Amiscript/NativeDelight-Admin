@@ -17,11 +17,21 @@ interface MenuItem {
   id: number;
   name: string;
   category: string;
+  subCategory?: string; // <-- Add this line
   price: number;
   stock: "In Stock" | "Low Stock" | "Out of Stock";
   image: string;
   description: string;
 }
+
+// Add subcategories for each category
+const subCategories: { [key: string]: string[] } = {
+  Burgers: ["Beef Burgers", "Chicken Burgers", "Veggie Burgers"],
+  Pizza: ["Margherita", "Pepperoni", "BBQ Chicken"],
+  Salads: ["Caesar", "Greek", "Garden"],
+  Desserts: ["Brownies", "Ice Cream", "Cakes"],
+  Pasta: ["Alfredo", "Bolognese", "Carbonara"],
+};
 
 const categories = ["All", "Burgers", "Pizza", "Salads", "Desserts", "Pasta"];
 
@@ -91,6 +101,7 @@ const App: React.FC = () => {
     id: Date.now(),
     name: "",
     category: "",
+    subCategory: "", // <-- Add this line
     price: 0,
     stock: "In Stock",
     image: "",
@@ -111,6 +122,7 @@ const App: React.FC = () => {
       id: Date.now(),
       name: "",
       category: "",
+      subCategory: "", // <-- Add this line
       price: 0,
       stock: "In Stock",
       image: "",
@@ -356,7 +368,9 @@ const App: React.FC = () => {
                     <select
                       className="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       value={newItem.category}
-                      onChange={e => setNewItem({ ...newItem, category: e.target.value })}
+                      onChange={e => {
+                        setNewItem({ ...newItem, category: e.target.value, subCategory: "" });
+                      }}
                       required
                     >
                       <option value="">Select Category</option>
@@ -365,6 +379,22 @@ const App: React.FC = () => {
                       ))}
                     </select>
                   </div>
+                  {newItem.category && subCategories[newItem.category] && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Subcategory</label>
+                      <select
+                        className="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        value={newItem.subCategory || ""}
+                        onChange={e => setNewItem({ ...newItem, subCategory: e.target.value })}
+                        required
+                      >
+                        <option value="">Select Subcategory</option>
+                        {subCategories[newItem.category].map(sub => (
+                          <option key={sub} value={sub}>{sub}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Stock Status</label>
                     <select
@@ -510,6 +540,7 @@ const App: React.FC = () => {
                 <tr>
                   <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item</th>
                   <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subcategory</th>
                   <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
                   <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                   <th className="px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
@@ -531,6 +562,9 @@ const App: React.FC = () => {
                     </td>
                     <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">{item.category}</div>
+                    </td>
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{item.subCategory || "—"}</div>
                     </td>
                     <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">₦{item.price.toFixed(2)}</div>
@@ -670,13 +704,28 @@ const App: React.FC = () => {
                     <select
                       className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       value={currentEditItem.category}
-                      onChange={e => setCurrentEditItem({ ...currentEditItem, category: e.target.value })}
+                      onChange={e => setCurrentEditItem({ ...currentEditItem, category: e.target.value, subCategory: "" })}
                     >
                       {categories.filter(cat => cat !== "All").map(category => (
                         <option key={category} value={category}>{category}</option>
                       ))}
                     </select>
                   </div>
+                  {currentEditItem.category && subCategories[currentEditItem.category] && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Subcategory</label>
+                      <select
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        value={currentEditItem.subCategory || ""}
+                        onChange={e => setCurrentEditItem({ ...currentEditItem, subCategory: e.target.value })}
+                      >
+                        <option value="">Select Subcategory</option>
+                        {subCategories[currentEditItem.category].map(sub => (
+                          <option key={sub} value={sub}>{sub}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Stock Status</label>
                     <select
@@ -799,7 +848,10 @@ const App: React.FC = () => {
                   name="category"
                   className="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   value={editItem.category}
-                  onChange={handleEditModalChange}
+                  onChange={e => {
+                    handleEditModalChange(e);
+                    setEditItem(editItem => editItem ? { ...editItem, subCategory: "" } : editItem);
+                  }}
                   required
                 >
                   {categories.filter(cat => cat !== "All").map(category => (
@@ -807,6 +859,23 @@ const App: React.FC = () => {
                   ))}
                 </select>
               </div>
+              {editItem.category && subCategories[editItem.category] && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Subcategory</label>
+                  <select
+                    name="subCategory"
+                    className="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    value={editItem.subCategory || ""}
+                    onChange={handleEditModalChange}
+                    required
+                  >
+                    <option value="">Select Subcategory</option>
+                    {subCategories[editItem.category].map(sub => (
+                      <option key={sub} value={sub}>{sub}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <div>
                 <label className="block text-sm font-medium text-gray-700">Stock Status</label>
                 <select
@@ -876,6 +945,8 @@ const App: React.FC = () => {
                         editItem ? { ...editItem, image: ev.target?.result as string } : editItem
                         );
                       };
+
+                      
                       reader.readAsDataURL(file);
                       }
                     }}
