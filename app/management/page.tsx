@@ -24,13 +24,38 @@ interface MenuItem {
   description: string;
 }
 
-// Add subcategories for each category
-const subCategories: { [key: string]: string[] } = {
-  Burgers: ["Beef Burgers", "Chicken Burgers", "Veggie Burgers"],
-  Pizza: ["Margherita", "Pepperoni", "BBQ Chicken"],
-  Salads: ["Caesar", "Greek", "Garden"],
-  Desserts: ["Brownies", "Ice Cream", "Cakes"],
-  Pasta: ["Alfredo", "Bolognese", "Carbonara"],
+// 1. Change subCategories to be an object of arrays of objects
+interface SubCategory {
+  id: number;
+  name: string;
+}
+
+const subCategories: { [key: string]: SubCategory[] } = {
+  Burgers: [
+    { id: 1, name: "Beef Burgers" },
+    { id: 2, name: "Chicken Burgers" },
+    { id: 3, name: "Veggie Burgers" },
+  ],
+  Pizza: [
+    { id: 4, name: "Margherita" },
+    { id: 5, name: "Pepperoni" },
+    { id: 6, name: "BBQ Chicken" },
+  ],
+  Salads: [
+    { id: 7, name: "Caesar" },
+    { id: 8, name: "Greek" },
+    { id: 9, name: "Garden" },
+  ],
+  Desserts: [
+    { id: 10, name: "Brownies" },
+    { id: 11, name: "Ice Cream" },
+    { id: 12, name: "Cakes" },
+  ],
+  Pasta: [
+    { id: 13, name: "Alfredo" },
+    { id: 14, name: "Bolognese" },
+    { id: 15, name: "Carbonara" },
+  ],
 };
 
 const categories = ["All", "Burgers", "Pizza", "Salads", "Desserts", "Pasta"];
@@ -113,6 +138,24 @@ const App: React.FC = () => {
   // Edit Modal State
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editItem, setEditItem] = useState<MenuItem | null>(null);
+
+  // 2. Add state to manage subcategory order for the selected category
+  const [subCategoryOrder, setSubCategoryOrder] = useState<{ [key: string]: SubCategory[] }>(subCategories);
+
+  // Move subcategory up or down in the order
+  const moveSubcategory = (category: string, subId: number, direction: 'up' | 'down') => {
+    setSubCategoryOrder(prev => {
+      const arr = prev[category] ? [...prev[category]] : [];
+      const idx = arr.findIndex(sub => sub.id === subId);
+      if (idx === -1) return prev;
+      if (direction === 'up' && idx > 0) {
+        [arr[idx - 1], arr[idx]] = [arr[idx], arr[idx - 1]];
+      } else if (direction === 'down' && idx < arr.length - 1) {
+        [arr[idx], arr[idx + 1]] = [arr[idx + 1], arr[idx]];
+      }
+      return { ...prev, [category]: arr };
+    });
+  };
 
   const handleAddNewItem = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -333,7 +376,7 @@ const App: React.FC = () => {
           {/* Add New Item Modal */}
           {isAddModalOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-              <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative">
+              <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative max-h-[90vh] flex flex-col">
                 <button
                   className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
                   onClick={() => setIsAddModalOpen(false)}
@@ -341,7 +384,11 @@ const App: React.FC = () => {
                   <i className="fas fa-times"></i>
                 </button>
                 <h2 className="text-lg font-semibold mb-4">Add New Menu Item</h2>
-                <form onSubmit={handleAddNewItem} className="space-y-4">
+                <form
+                  onSubmit={handleAddNewItem}
+                  className="space-y-4 overflow-y-auto"
+                  style={{ maxHeight: "70vh" }}
+                >
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Item Name</label>
                     <input
@@ -379,20 +426,37 @@ const App: React.FC = () => {
                       ))}
                     </select>
                   </div>
-                  {newItem.category && subCategories[newItem.category] && (
+                  {/* 4. In Add/Edit Menu Item Modal, show subcategories in the current order with move buttons */}
+                  {newItem.category && subCategoryOrder[newItem.category] && (
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Subcategory</label>
-                      <select
-                        className="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                        value={newItem.subCategory || ""}
-                        onChange={e => setNewItem({ ...newItem, subCategory: e.target.value })}
-                        required
-                      >
-                        <option value="">Select Subcategory</option>
-                        {subCategories[newItem.category].map(sub => (
-                          <option key={sub} value={sub}>{sub}</option>
+                      <div className="flex flex-col gap-1">
+                        {subCategoryOrder[newItem.category].map((sub, idx, arr) => (
+                          <div key={sub.id} className="flex items-center gap-2">
+                            <input
+                              type="radio"
+                              name="subCategory"
+                              checked={newItem.subCategory === sub.name}
+                              onChange={() => setNewItem({ ...newItem, subCategory: sub.name })}
+                            />
+                            <span>{sub.name}</span>
+                            <button
+                              type="button"
+                              className="text-xs px-1"
+                              disabled={idx === 0}
+                              onClick={() => moveSubcategory(newItem.category, sub.id, 'up')}
+                              title="Move Up"
+                            >▲</button>
+                            <button
+                              type="button"
+                              className="text-xs px-1"
+                              disabled={idx === arr.length - 1}
+                              onClick={() => moveSubcategory(newItem.category, sub.id, 'down')}
+                              title="Move Down"
+                            >▼</button>
+                          </div>
                         ))}
-                      </select>
+                      </div>
                     </div>
                   )}
                   <div>
@@ -711,19 +775,37 @@ const App: React.FC = () => {
                       ))}
                     </select>
                   </div>
-                  {currentEditItem.category && subCategories[currentEditItem.category] && (
+                  {/* 4. In Add/Edit Menu Item Modal, show subcategories in the current order with move buttons */}
+                  {currentEditItem.category && subCategoryOrder[currentEditItem.category] && (
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Subcategory</label>
-                      <select
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                        value={currentEditItem.subCategory || ""}
-                        onChange={e => setCurrentEditItem({ ...currentEditItem, subCategory: e.target.value })}
-                      >
-                        <option value="">Select Subcategory</option>
-                        {subCategories[currentEditItem.category].map(sub => (
-                          <option key={sub} value={sub}>{sub}</option>
+                      <div className="flex flex-col gap-1">
+                        {subCategoryOrder[currentEditItem.category].map((sub, idx, arr) => (
+                          <div key={sub.id} className="flex items-center gap-2">
+                            <input
+                              type="radio"
+                              name="subCategory"
+                              checked={currentEditItem.subCategory === sub.name}
+                              onChange={() => setCurrentEditItem({ ...currentEditItem, subCategory: sub.name })}
+                            />
+                            <span>{sub.name}</span>
+                            <button
+                              type="button"
+                              className="text-xs px-1"
+                              disabled={idx === 0}
+                              onClick={() => moveSubcategory(currentEditItem.category, sub.id, 'up')}
+                              title="Move Up"
+                            >▲</button>
+                            <button
+                              type="button"
+                              className="text-xs px-1"
+                              disabled={idx === arr.length - 1}
+                              onClick={() => moveSubcategory(currentEditItem.category, sub.id, 'down')}
+                              title="Move Down"
+                            >▼</button>
+                          </div>
                         ))}
-                      </select>
+                      </div>
                     </div>
                   )}
                   <div>
@@ -859,21 +941,37 @@ const App: React.FC = () => {
                   ))}
                 </select>
               </div>
-              {editItem.category && subCategories[editItem.category] && (
+              {/* 4. In Add/Edit Menu Item Modal, show subcategories in the current order with move buttons */}
+              {editItem.category && subCategoryOrder[editItem.category] && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Subcategory</label>
-                  <select
-                    name="subCategory"
-                    className="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    value={editItem.subCategory || ""}
-                    onChange={handleEditModalChange}
-                    required
-                  >
-                    <option value="">Select Subcategory</option>
-                    {subCategories[editItem.category].map(sub => (
-                      <option key={sub} value={sub}>{sub}</option>
+                  <div className="flex flex-col gap-1">
+                    {subCategoryOrder[editItem.category].map((sub, idx, arr) => (
+                      <div key={sub.id} className="flex items-center gap-2">
+                        <input
+                          type="radio"
+                          name="subCategory"
+                          checked={editItem.subCategory === sub.name}
+                          onChange={() => setEditItem({ ...editItem, subCategory: sub.name })}
+                        />
+                        <span>{sub.name}</span>
+                        <button
+                          type="button"
+                          className="text-xs px-1"
+                          disabled={idx === 0}
+                          onClick={() => moveSubcategory(editItem.category, sub.id, 'up')}
+                          title="Move Up"
+                        >▲</button>
+                        <button
+                          type="button"
+                          className="text-xs px-1"
+                          disabled={idx === arr.length - 1}
+                          onClick={() => moveSubcategory(editItem.category, sub.id, 'down')}
+                          title="Move Down"
+                        >▼</button>
+                      </div>
                     ))}
-                  </select>
+                  </div>
                 </div>
               )}
               <div>

@@ -150,6 +150,24 @@ const App: React.FC = () => {
     });
   };
 
+  // 1. Add a function to move a subcategory up or down
+  const moveSubcategory = (subId: number, direction: 'up' | 'down') => {
+    if (!currentCategory || !currentCategory.subcategories) return;
+    const idx = currentCategory.subcategories.findIndex(sub => sub.id === subId);
+    if (idx === -1) return;
+    const newSubcategories = [...currentCategory.subcategories];
+    if (direction === 'up' && idx > 0) {
+      [newSubcategories[idx - 1], newSubcategories[idx]] = [newSubcategories[idx], newSubcategories[idx - 1]];
+    }
+    if (direction === 'down' && idx < newSubcategories.length - 1) {
+      [newSubcategories[idx + 1], newSubcategories[idx]] = [newSubcategories[idx], newSubcategories[idx + 1]];
+    }
+    setCurrentCategory({
+      ...currentCategory,
+      subcategories: newSubcategories
+    });
+  };
+
   const handleSaveCategory = () => {
     if (!currentCategory) return;
     if (modalMode === 'add') {
@@ -859,10 +877,28 @@ const App: React.FC = () => {
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Subcategories</label>
                         <div className="space-y-2">
-                          {(currentCategory?.subcategories || []).map((sub, ) => (
+                          {(currentCategory?.subcategories || []).map((sub, idx, arr) => (
                             <div key={sub.id} className="flex items-center space-x-2">
                               <span className="text-sm font-semibold">{sub.name}</span>
                               <span className="text-xs text-gray-500">{sub.description}</span>
+                              <button
+                                type="button"
+                                className="text-gray-500 hover:text-gray-700 text-xs"
+                                disabled={idx === 0}
+                                onClick={() => moveSubcategory(sub.id, 'up')}
+                                title="Move Up"
+                              >
+                                <i className="fas fa-arrow-up"></i>
+                              </button>
+                              <button
+                                type="button"
+                                className="text-gray-500 hover:text-gray-700 text-xs"
+                                disabled={idx === arr.length - 1}
+                                onClick={() => moveSubcategory(sub.id, 'down')}
+                                title="Move Down"
+                              >
+                                <i className="fas fa-arrow-down"></i>
+                              </button>
                               <button
                                 type="button"
                                 className="text-red-500 hover:text-red-700 text-xs"
