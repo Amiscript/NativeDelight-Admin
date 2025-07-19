@@ -3,19 +3,17 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import {
 
-  // Settings as SettingsIcon,
   LogOut,
-  // Upload,
- 
+
 } from 'lucide-react';
 
 
 interface OrderItem {
   name: string;
-  quantity: number;
+  quantity: number;  
   price: number;
 }
-
+ 
 interface Order {
   id: string;
   customer: string;

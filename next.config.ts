@@ -1,10 +1,22 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
- // next.config.js
+
   images: {
-    domains: ['kscuisine.com', "images.unsplash.com",'public.readdy.ai'],
+    domains:   ['kscuisine.com', "images.unsplash.com",'public.readdy.ai'] ,
+
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+       
+      }
+    ],
+
+    loader: 'cloudinary',
+    path: 'https://res.cloudinary.com/your-cloud-name/image/upload',
   },
-};
+}
+
 
 export default nextConfig;

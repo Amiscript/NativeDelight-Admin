@@ -26,7 +26,7 @@ interface Category {
   status: string;
   createdAt: string;
   image: string;
-  subcategories?: SubCategory[]; // <-- Add this line
+  subcategories?: SubCategory[]; 
 }
 
 const App: React.FC = () => {
