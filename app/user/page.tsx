@@ -1,5 +1,6 @@
 "use client";
 import React, { useState } from 'react';
+import Sidebar from '../components/Sidebar';
 import Image from 'next/image';
 import { format } from 'date-fns';
 import {
@@ -53,8 +54,7 @@ function App() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
 
-  // Responsive sidebar toggle
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+
 
   // Mock data (move to state for add/delete)
   const [users, setUsers] = useState<User[]>([
@@ -129,8 +129,7 @@ function App() {
     }
   };
 
-  // Responsive sidebar close on overlay click
-  const handleSidebarOverlay = () => setSidebarOpen(false);
+  
 
   // Edit User Handler
   const handleEditUser = (user: User) => {
@@ -140,89 +139,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row">
-      {/* Mobile Sidebar Toggle */}
-      <div className="md:hidden  flex items-center justify-between px-4 py-3 bg-white shadow">
-        <button
-          className="text-gray-700 focus:outline-none"
-          onClick={() => setSidebarOpen(true)}
-        >
-          <svg className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </button>
-        <span className="text-lg font-bold">User Management</span>
-        <div />
-      </div>
-
-      {/* Sidebar */}
-      <nav className={`
-        fixed top-0 left-0 h-full w-64 bg-gray-900 shadow-lg p-4 z-30
-        transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-        transition-transform duration-200
-        md:translate-x-0 md:static md:block
-      `}>
-        <div className="flex items-center space-x-2 mb-8">
-          <Users className="h-8 w-8 text-blue-600" />
-          <h1 className="text-xl font-bold  text-white">User Management</h1>
-        </div>
-        <div className="space-y-2">
-          <a href="/dashboard">
-            <button className="w-full flex items-center space-x-3 px-4 py-2  text-white rounded-lg  hover:bg-gray-500">
-              <span>Dashboard</span>
-            </button>
-          </a>
-          <a href="/management">
-            <button className="w-full flex items-center space-x-3 px-4 py-2 text-white rounded-lg hover:bg-gray-500">
-              <span>Management</span>
-            </button>
-          </a>
-          <a href="/category">
-            <button className="w-full flex items-center space-x-3 px-4 py-2 text-white rounded-lg hover:bg-gray-500">
-              <span>Category</span>
-            </button>
-          </a>
-          <a href="/order">
-            <button className="w-full flex items-center space-x-3 px-4 py-2 text-white rounded-lg hover:bg-gray-500">
-              <span>Order</span>
-            </button>
-          </a>
-          {/* <a href="/user">
-            <button className="w-full flex items-center space-x-3 px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
-              <span>Users</span>
-            </button>
-          </a> */}
-          <a href="/setting">
-            <button className="w-full flex items-center space-x-3 px-4 py-2 mb-4 text-white rounded-lg hover:bg-gray-500">
-              <span>Settings</span>
-            </button>
-          </a>
-        </div>
-        <div className="absolute bottom-[-1]  left-0 right-0">
-          <div className="flex items-center space-x-3 p-4 bg-gray-900 text-white rounded-lg">
-            <Image
-              src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e"
-              alt="Admin"
-              width={40}
-              height={40}
-              className="h-10 w-10 rounded-full"
-            />
-            <div className="flex-1">
-              <p className="text-sm font-medium">Admin User</p>
-              <p className="text-x  text-white">admin@example.com</p>
-            </div>
-            <button>
-              <LogOut className="h-5 w-5 text-gray-50" />
-            </button>
-          </div>
-        </div>
-      </nav>
-      {/* Sidebar Overlay for mobile */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-30 z-20 md:hidden"
-          onClick={handleSidebarOverlay}
-        />
-      )}
+       <Sidebar activePath="/user" />
 
       {/* Main Content */}
       <div className="flex-1 md:ml-20 p-4 sm:p-8">
