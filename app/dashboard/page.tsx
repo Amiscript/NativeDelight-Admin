@@ -8,13 +8,13 @@ import {
   Search,
   // Bell,
   // Package,
-  LogOut,
+  // LogOut,
   TrendingUp,
   ShoppingCart,
   // Star,
   ArrowUp,
   ArrowDown,
-  BarChart2,
+  // BarChart2,
   AlertTriangle,
   // Plus,
 } from 'lucide-react';
@@ -92,10 +92,7 @@ export default function Home() {
           </div>
           <div className="flex items-center space-x-4">
             <button className="relative">
-              {/* <Bell className="h-6 w-6 text-gray-600" />
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
-                3
-              </span> */}
+             
             </button>
           </div>
         </header>
@@ -152,23 +149,6 @@ export default function Home() {
               <span className="text-gray-500 ml-2">vs last week</span>
             </div>
           </div>
-
-          {/* <div className="bg-white rounded-lg shadow-sm p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <p className="text-gray-500 text-sm">Customer Rating</p>
-                <h3 className="text-2xl font-bold">4.8/5.0</h3>
-              </div>
-              <div className="bg-purple-100 p-3 rounded-lg">
-                <Star className="h-6 w-6 text-purple-600" />
-              </div>
-            </div>
-            <div className="flex items-center text-sm">
-              <ArrowUp className="h-4 w-4 text-green-500 mr-1" />
-              <span className="text-green-500 font-medium">4%</span>
-              <span className="text-gray-500 ml-2">vs last month</span>
-            </div>
-          </div> */}
         </div>
 
         {/* Charts Section */}
@@ -290,38 +270,6 @@ export default function Home() {
             </div>
           </div>
         </div>
-
-        {/* Quick Actions
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-          <button className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow w-full">
-            <div className="flex items-center justify-between mb-4">
-              <span className="font-medium">Manage Menu</span>
-              <Plus className="h-5 w-5 text-gray-400" />
-            </div>
-            <p className="text-sm text-gray-500">Update items and prices</p>
-          </button>
-          <button className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow w-full">
-            <div className="flex items-center justify-between mb-4">
-              <span className="font-medium">View Orders</span>
-              <ShoppingCart className="h-5 w-5 text-gray-400" />
-            </div>
-            <p className="text-sm text-gray-500">Process pending orders</p>
-          </button>
-          <button className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow w-full">
-            <div className="flex items-center justify-between mb-4">
-              <span className="font-medium">Update Inventory</span>
-              <Package className="h-5 w-5 text-gray-400" />
-            </div>
-            <p className="text-sm text-gray-500">Manage stock levels</p>
-          </button>
-          <button className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow w-full">
-            <div className="flex items-center justify-between mb-4">
-              <span className="font-medium">Customer Feedback</span>
-              <Star className="h-5 w-5 text-gray-400" />
-            </div>
-            <p className="text-sm text-gray-500">View recent reviews</p>
-          </button>
-        </div> */}
       </div>
     </div>
   );

@@ -2,6 +2,7 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { AppThunk } from '../store';
 import api from '@/services/api';
 
+// Define more specific types
 type Role = 'admin' | 'manager' | 'staff';
 type Status = 'active' | 'inactive';
 
@@ -15,19 +16,32 @@ interface User {
   avatar: string;
 }
 
+interface AuthUser {
+  id: string;
+  email: string;
+  name: string;
+  role: Role;
+  avatar: string;
+}
+
+interface AuthError {
+  message: string;
+  details?: string;
+  fieldErrors?: {
+    email?: string;
+    password?: string;
+    [key: string]: string | undefined;
+  };
+}
+
 interface AuthState {
-  user: {
-    id: string;
-    email: string;
-    name: string;
-    role: Role;
-    avatar: string;
-  } | null;
+  user: AuthUser | null;
   token: string | null;
   loading: boolean;
-  error: string | null;
+  error: AuthError | null;
   users: User[];
   avatarUploading: boolean;
+  usersLoading: boolean;
 }
 
 const initialState: AuthState = {
@@ -37,6 +51,7 @@ const initialState: AuthState = {
   error: null,
   users: [],
   avatarUploading: false,
+  usersLoading: false,
 };
 
 const authSlice = createSlice({
@@ -47,30 +62,31 @@ const authSlice = createSlice({
       state.loading = true;
       state.error = null;
     },
-    loginSuccess(state, action: PayloadAction<{ user: any; token: string }>) {
+    loginSuccess(state, action: PayloadAction<{ user: AuthUser; token: string }>) {
       state.loading = false;
-      state.user = {
-        id: action.payload.user.id,
-        email: action.payload.user.email,
-        name: action.payload.user.name,
-        role: action.payload.user.role,
-        avatar: action.payload.user.avatar || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(action.payload.user.name),
-      };
+      state.user = action.payload.user;
       state.token = action.payload.token;
+      state.error = null;
     },
-    loginFailure(state, action: PayloadAction<string>) {
+    loginFailure(state, action: PayloadAction<AuthError>) {
       state.loading = false;
       state.error = action.payload;
     },
     logout(state) {
       state.user = null;
       state.token = null;
+      state.users = [];
+      state.error = null;
     },
     clearError(state) {
       state.error = null;
     },
     setUsers(state, action: PayloadAction<User[]>) {
       state.users = action.payload;
+      state.usersLoading = false;
+    },
+    setUsersLoading(state, action: PayloadAction<boolean>) {
+      state.usersLoading = action.payload;
     },
     addUser(state, action: PayloadAction<User>) {
       state.users.push(action.payload);
@@ -103,12 +119,21 @@ const authSlice = createSlice({
         state.user.avatar = action.payload.avatarUrl;
       }
     },
-    avatarUploadFailure(state) {
+    avatarUploadFailure(state, action: PayloadAction<AuthError>) {
       state.avatarUploading = false;
+      state.error = action.payload;
+    },
+    changePasswordSuccess(state) {
+      state.loading = false;
+    },
+    changePasswordFailure(state, action: PayloadAction<AuthError>) {
+      state.loading = false;
+      state.error = action.payload;
     },
   },
 });
 
+// Action creators
 export const {
   loginStart,
   loginSuccess,
@@ -116,6 +141,7 @@ export const {
   logout,
   clearError,
   setUsers,
+  setUsersLoading,
   addUser,
   updateUser,
   deleteUser,
@@ -123,40 +149,93 @@ export const {
   avatarUploadStart,
   avatarUploadSuccess,
   avatarUploadFailure,
+  changePasswordSuccess,
+  changePasswordFailure,
 } = authSlice.actions;
 
-// Thunk actions
-export const uploadAvatar = (userId: string, file: File): AppThunk => async (dispatch) => {
-  try {
-    dispatch(avatarUploadStart());
-    
-    const formData = new FormData();
-    formData.append('avatar', file);
-    
-    const response = await api.post(`/users/${userId}/avatar`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-    
-    dispatch(avatarUploadSuccess({
-      userId,
-      avatarUrl: response.data.avatarUrl,
-    }));
-    
-    return response.data.avatarUrl;
-  } catch (error) {
-    dispatch(avatarUploadFailure());
-    throw error;
+// Helper function to handle API errors
+const handleApiError = (error: any): AuthError => {
+  const defaultError = {
+    message: 'Authentication failed',
+    details: 'Please try again later',
+    code: 'UNKNOWN_ERROR'
+  };
+  if (error.response) {
+    return {
+      ...defaultError,
+      ...error.response.data,
+      code: error.response.data.error?.code || 'API_ERROR',
+      message: error.response.data.message || 'Request failed',
+      details: error.response.data.error?.details,
+      fieldErrors: error.response.data.errors
+    };
+  } else if (error.request) {
+    return {
+      ...defaultError,
+      message: 'Network error',
+      details: 'Could not connect to server',
+    };
+  } else {
+    return {
+      ...defaultError,
+      message: 'Request error',
+      details: error.message
+    };
   }
 };
 
-export const fetchUsers = (): AppThunk => async (dispatch) => {
+// Thunk actions
+export const loginUser = (
+  credentials: { email: string; password: string }
+): AppThunk => async (dispatch) => {
   try {
-    const response = await api.get('/users');
-    dispatch(setUsers(response.data));
+    dispatch(loginStart());
+    
+    const response = await api.post('/auth/login', credentials);
+    
+    localStorage.setItem('token', response.data.token);
+    
+    dispatch(loginSuccess({
+      user: response.data.user,
+      token: response.data.token
+    }));
+    
+    return response.data;
   } catch (error: any) {
-    console.error('Failed to fetch users:', error);
+    const errorPayload = handleApiError(error);
+    dispatch(loginFailure(errorPayload));
+    throw errorPayload;
+  }
+};
+
+export const createUser = (
+  userData: { 
+    name: string; 
+    email: string; 
+    role: Role; 
+    password: string;
+  }
+): AppThunk => async (dispatch) => {
+  try {
+    dispatch(loginStart());
+    const response = await api.post('/auth/create', userData);
+    return response.data;
+  } catch (error: any) {
+    throw handleApiError(error);
+  }
+};
+
+export const fetchUsers = (page = 1, limit = 10): AppThunk => async (dispatch) => {
+  try {
+    dispatch(setUsersLoading(true));
+    const response = await api.get('/auth/users', {
+      params: { page, limit }
+    });
+    dispatch(setUsers(response.data.users));
+    return response.data;
+  } catch (error: any) {
+    dispatch(setUsersLoading(false));
+    throw handleApiError(error);
   }
 };
 
@@ -171,105 +250,62 @@ export const addNewUser = (
   }
 ): AppThunk => async (dispatch) => {
   try {
-    let avatarUrl = '';
-    
-    // First upload avatar if provided
-    if (userData.avatarFile) {
-      const formData = new FormData();
-      formData.append('avatar', userData.avatarFile);
-      
-      const uploadResponse = await api.post('/uploads/avatar', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      
-      avatarUrl = uploadResponse.data.url;
-    }
+    const formData = new FormData();
+    Object.entries(userData).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        formData.append(key, value instanceof File ? value : String(value));
+      }
+    });
 
-    // Then create the user
-    const response = await api.post('/users', {
-      name: userData.name,
-      email: userData.email,
-      role: userData.role,
-      status: userData.status || 'active',
-      password: userData.password || 'defaultPassword', // In production, generate a random one
-      avatar: avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name)}`,
+    const response = await api.post('/auth/add-user', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
     });
 
     dispatch(addUser(response.data));
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.message || 'Failed to add user');
-  }
-};
-
-export const editUser = (
-  id: string, 
-  userData: Partial<{
-    name: string;
-    email: string;
-    role: Role;
-    status: Status;
-    avatarFile: File;
-  }>
-): AppThunk => async (dispatch) => {
-  try {
-    let avatarUrl: string | undefined;
-    
-    // Handle avatar upload if file is provided
-    if (userData.avatarFile) {
-      const formData = new FormData();
-      formData.append('avatar', userData.avatarFile);
-      
-      const uploadResponse = await api.post('/uploads/avatar', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      
-      avatarUrl = uploadResponse.data.url;
-    }
-
-    // Update user data
-    const updateData = {
-      ...userData,
-      ...(avatarUrl ? { avatar: avatarUrl } : {}),
-    };
-    delete updateData.avatarFile; // Remove the file from the payload
-    
-    const response = await api.put(`/users/${id}`, updateData);
-    dispatch(updateUser(response.data));
-    return response.data;
-  } catch (error: any) {
-    throw new Error(error.response?.data?.message || 'Failed to update user');
+    throw handleApiError(error);
   }
 };
 
 export const removeUser = (id: string): AppThunk => async (dispatch) => {
   try {
-    await api.delete(`/users/${id}`);
+    await api.delete(`/auth/users/${id}`);
     dispatch(deleteUser(id));
   } catch (error: any) {
-    throw new Error(error.response?.data?.message || 'Failed to delete user');
+    throw handleApiError(error);
   }
 };
 
-export const changeUserStatus = (
-  id: string, 
-  status: Status
+export const changeUserPassword = (
+  currentPassword: string,
+  newPassword: string
 ): AppThunk => async (dispatch) => {
   try {
-    await api.patch(`/users/${id}/status`, { status });
-    dispatch(updateUserStatus({ id, status }));
+    dispatch(loginStart());
+    await api.post('/auth/change-password', {
+      currentPassword,
+      newPassword
+    });
+    dispatch(changePasswordSuccess());
   } catch (error: any) {
-    throw new Error(error.response?.data?.message || 'Failed to update user status');
+    const errorPayload = handleApiError(error);
+    dispatch(changePasswordFailure(errorPayload));
+    throw errorPayload;
   }
 };
 
-export const logoutUser = (): AppThunk => (dispatch) => {
-  localStorage.removeItem('token');
-  dispatch(logout());
+export const logoutUser = (): AppThunk => async (dispatch) => {
+  try {
+    await api.post('/auth/logout');
+  } catch (error) {
+    console.error('Logout API error:', error);
+  } finally {
+    localStorage.removeItem('token');
+    dispatch(logout());
+  }
 };
 
 export default authSlice.reducer;
