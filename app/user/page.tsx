@@ -1,25 +1,37 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useDispatch, useSelector } from 'react-redux';
-import { RootState, AppDispatch } from '../../store/store';
 import { 
-  fetchUsers, 
-  addNewUser, 
-  editUser, 
-  removeUser,
-  changeUserStatus
-} from '../../store/slices/authSlice';
+  useGetUsersQuery,
+  useAddUserMutation,
+  useUpdateUserMutation,
+  useDeleteUserMutation,
+  useChangeUserStatusMutation
+} from '../../store/query/AuthApi';
 import { format } from 'date-fns';
 import Image from 'next/image';
 import { Search, Users, UserCheck, UserMinus, Shield, Download, Plus, Edit, Trash, Ban } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 
+interface UserFormData {
+  name: string;
+  email: string;
+  role: 'admin' | 'manager' | 'staff';
+  status: 'active' | 'inactive';
+  avatar: string;
+  avatarFile: File | null;
+}
+
 function UserManagementPage() {
   const router = useRouter();
-  const dispatch = useDispatch<AppDispatch>();
-  const { users, loading, error } = useSelector((state: RootState) => state.auth);
   
+  // RTK Query hooks
+  const { data: usersData = [], isLoading, error, refetch } = useGetUsersQuery();
+  const [addUser] = useAddUserMutation();
+  const [updateUser] = useUpdateUserMutation();
+  const [deleteUser] = useDeleteUserMutation();
+  const [changeStatus] = useChangeUserStatusMutation();
+
   // Filter states
   const [selectedRole, setSelectedRole] = useState<'admin' | 'manager' | 'staff' | 'all'>('all');
   const [selectedStatus, setSelectedStatus] = useState<'active' | 'inactive' | 'all'>('all');
@@ -34,55 +46,54 @@ function UserManagementPage() {
   const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
   
   // Form states
-  const [addUserData, setAddUserData] = useState({
+  const [addUserData, setAddUserData] = useState<UserFormData>({
     name: '',
     email: '',
-    role: 'staff' as 'admin' | 'manager' | 'staff',
-    status: 'active' as 'active' | 'inactive',
+    role: 'staff',
+    status: 'active',
     avatar: '',
-    avatarFile: null as File | null
+    avatarFile: null
   });
   
-  const [editUserData, setEditUserData] = useState({
+  const [editUserData, setEditUserData] = useState<UserFormData>({
     name: '',
     email: '',
-    role: 'staff' as 'admin' | 'manager' | 'staff',
-    status: 'active' as 'active' | 'inactive',
+    role: 'staff',
+    status: 'active',
     avatar: '',
-    avatarFile: null as File | null
+    avatarFile: null
   });
 
-  // Fetch users on component mount
-  useEffect(() => {
-    dispatch(fetchUsers());
-  }, [dispatch]);
-
   // Filter users based on selected filters
-  const filteredUsers = users.filter(user =>
+  const filteredUsers = usersData.filter((user: any) =>
     (selectedRole === 'all' || user.role === selectedRole) &&
     (selectedStatus === 'all' || user.status === selectedStatus)
   );
 
   // Statistics
   const stats = [
-    { label: 'Total Users', value: users.length, icon: Users, color: 'bg-blue-500' },
-    { label: 'Active Users', value: users.filter(u => u.status === 'active').length, icon: UserCheck, color: 'bg-green-500' },
-    { label: 'Inactive Users', value: users.filter(u => u.status === 'inactive').length, icon: UserMinus, color: 'bg-yellow-500' },
-    { label: 'Admin Users', value: users.filter(u => u.role === 'admin').length, icon: Shield, color: 'bg-purple-500' },
+    { label: 'Total Users', value: usersData.length, icon: Users, color: 'bg-blue-500' },
+    { label: 'Active Users', value: usersData.filter((u: any) => u.status === 'active').length, icon: UserCheck, color: 'bg-green-500' },
+    { label: 'Inactive Users', value: usersData.filter((u: any) => u.status === 'inactive').length, icon: UserMinus, color: 'bg-yellow-500' },
+    { label: 'Admin Users', value: usersData.filter((u: any) => u.role === 'admin').length, icon: Shield, color: 'bg-purple-500' },
   ];
 
   // Handle add user
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await dispatch(addNewUser({
-        name: addUserData.name,
-        email: addUserData.email,
-        role: addUserData.role,
-        status: addUserData.status,
-        avatarFile: addUserData.avatarFile || undefined,
-        password: generateRandomPassword() // Generate a random password for new users
-      }))
+      const formData = new FormData();
+      formData.append('name', addUserData.name);
+      formData.append('email', addUserData.email);
+      formData.append('role', addUserData.role);
+      formData.append('status', addUserData.status);
+      formData.append('password', generateRandomPassword());
+      
+      if (addUserData.avatarFile) {
+        formData.append('avatar', addUserData.avatarFile);
+      }
+
+      await addUser(formData).unwrap();
       
       setIsAddModalOpen(false);
       setAddUserData({
@@ -93,6 +104,7 @@ function UserManagementPage() {
         avatar: '',
         avatarFile: null
       });
+      refetch();
     } catch (error) {
       console.error('Failed to add user:', error);
     }
@@ -106,7 +118,7 @@ function UserManagementPage() {
       email: user.email,
       role: user.role,
       status: user.status,
-      avatar: user.avatar,
+      avatar: user.avatar || '',
       avatarFile: null
     });
     setIsQuickEditOpen(true);
@@ -117,19 +129,21 @@ function UserManagementPage() {
     if (!selectedUser) return;
     
     try {
-      await dispatch(editUser({
-        id: selectedUser.id,
-        userData: {
-          name: editUserData.name,
-          email: editUserData.email,
-          role: editUserData.role,
-          status: editUserData.status,
-          avatarFile: editUserData.avatarFile || undefined
-        }
-      })).unwrap();
+      const formData = new FormData();
+      formData.append('name', editUserData.name);
+      formData.append('email', editUserData.email);
+      formData.append('role', editUserData.role);
+      formData.append('status', editUserData.status);
+      
+      if (editUserData.avatarFile) {
+        formData.append('avatar', editUserData.avatarFile);
+      }
+
+      await updateUser({ id: selectedUser.id, formData }).unwrap();
       
       setIsQuickEditOpen(false);
       setSelectedUser(null);
+      refetch();
     } catch (error) {
       console.error('Failed to update user:', error);
     }
@@ -140,9 +154,10 @@ function UserManagementPage() {
     if (!deleteUserId) return;
     
     try {
-      await dispatch(removeUser(deleteUserId))
+      await deleteUser(deleteUserId).unwrap();
       setIsDeleteModalOpen(false);
       setDeleteUserId(null);
+      refetch();
     } catch (error) {
       console.error('Failed to delete user:', error);
     }
@@ -151,7 +166,8 @@ function UserManagementPage() {
   // Handle status change
   const handleStatusChange = async (userId: string, status: 'active' | 'inactive') => {
     try {
-      await dispatch(changeUserStatus({ id: userId, status })).unwrap();
+      await changeStatus({ id: userId, status }).unwrap();
+      refetch();
     } catch (error) {
       console.error('Failed to change user status:', error);
     }
@@ -249,7 +265,7 @@ function UserManagementPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredUsers.map((user) => (
+              {filteredUsers.map((user: any) => (
                 <tr key={user.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
@@ -410,9 +426,9 @@ function UserManagementPage() {
                   <button
                     type="submit"
                     className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
-                    disabled={loading}
+                    disabled={isLoading}
                   >
-                    {loading ? 'Adding...' : 'Add User'}
+                    {isLoading ? 'Adding...' : 'Add User'}
                   </button>
                 </div>
               </form>
@@ -447,9 +463,9 @@ function UserManagementPage() {
                 <button
                   className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md"
                   onClick={handleDeleteUser}
-                  disabled={loading}
+                  disabled={isLoading}
                 >
-                  {loading ? 'Deleting...' : 'Delete'}
+                  {isLoading ? 'Deleting...' : 'Delete'}
                 </button>
               </div>
             </div>
@@ -561,9 +577,9 @@ function UserManagementPage() {
                       type="submit"
                       className="bg-blue-600 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                       onClick={handleUpdateUser}
-                      disabled={loading}
+                      disabled={isLoading}
                     >
-                      {loading ? 'Saving...' : 'Save Changes'}
+                      {isLoading ? 'Saving...' : 'Save Changes'}
                     </button>
                   </div>
                 </div>

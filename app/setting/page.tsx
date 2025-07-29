@@ -36,7 +36,7 @@ const App: React.FC = () => {
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const handleSectionToggle = (section: Section) => {
+  const handleSectionToggle = (section: Section) => { 
     setExpandedSection(prevSection => (prevSection === section ? null : section));
   };
 

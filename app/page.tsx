@@ -1,19 +1,38 @@
 "use client";
 
 import React, { useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
-import { loginUser } from '@/store/slices/authSlice';
-import { RootState, AppDispatch } from '@/store/store';
+import { useLoginMutation } from '../store/query/AuthApi';
+import { Eye, EyeOff } from 'lucide-react';
+import { useDispatch } from 'react-redux';
+import { setCredentials } from '../store/slices/authSlice';
+
+interface FormData {
+  email: string;
+  password: string;
+}
+
+interface FieldErrors {
+  email?: string;
+  password?: string;
+}
+
+interface DisplayError {
+  message: string;
+  details?: string;
+  fieldErrors: FieldErrors;
+}
 
 const LoginPage = () => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     email: '',
     password: '',
   });
-  const dispatch = useDispatch<AppDispatch>();
+  const [showPassword, setShowPassword] = useState(false);
+  const [login, { isLoading, error }] = useLoginMutation();
+  console.log(login);
   const router = useRouter();
-  const { loading, error } = useSelector((state: RootState) => state.auth);
+  const dispatch = useDispatch();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -22,32 +41,46 @@ const LoginPage = () => {
     });
   };
 
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await dispatch(loginUser(formData)).unwrap();
+      const response = await login(formData).unwrap();
+      dispatch(setCredentials({ token: response.token, user: response.user }));
       router.push('/dashboard');
-    } catch {
-     
+    } catch (error) {
+      console.error('Login error:', error);
     }
   };
+
+  const displayError: DisplayError | null = error ? {
+    message: 'Login failed',
+    details: 'Invalid email or password',
+    fieldErrors: {
+      email: (error as any)?.data?.errors?.email?.[0],
+      password: (error as any)?.data?.errors?.password?.[0],
+    },
+  } : null;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-md">
         <h2 className="text-2xl font-bold text-center mb-6">Login</h2>
         
-        {error && (
+        {displayError && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-700 font-medium">{error.message}</p>
-            {error.details && (
-              <p className="text-red-600 text-sm mt-1">{error.details}</p>
+            <p className="text-red-700 font-medium">{displayError.message}</p>
+            {displayError.details && (
+              <p className="text-red-600 text-sm mt-1">{displayError.details}</p>
             )}
-            {error.fieldErrors?.email && (
-              <p className="text-red-500 text-xs mt-1">{error.fieldErrors.email}</p>
+            {displayError.fieldErrors?.email && (
+              <p className="text-red-500 text-xs mt-1">{displayError.fieldErrors.email}</p>
             )}
-            {error.fieldErrors?.password && (
-              <p className="text-red-500 text-xs mt-1">{error.fieldErrors.password}</p>
+            {displayError.fieldErrors?.password && (
+              <p className="text-red-500 text-xs mt-1">{displayError.fieldErrors.password}</p>
             )}
           </div>
         )}
@@ -64,36 +97,50 @@ const LoginPage = () => {
               value={formData.email}
               onChange={handleChange}
               className={`mt-1 block w-full px-3 py-2 border ${
-                error?.fieldErrors?.email ? 'border-red-300' : 'border-gray-300'
+                displayError?.fieldErrors?.email ? 'border-red-300' : 'border-gray-300'
               } rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
               required
             />
           </div>
 
-          <div>
+          <div className="relative">
             <label htmlFor="password" className="block text-sm font-medium text-gray-700">
               Password
             </label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              className={`mt-1 block w-full px-3 py-2 border ${
-                error?.fieldErrors?.password ? 'border-red-300' : 'border-gray-300'
-              } rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
-              required
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                id="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                className={`mt-1 block w-full px-3 py-2 border ${
+                  displayError?.fieldErrors?.password ? 'border-red-300' : 'border-gray-300'
+                } rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 pr-10`}
+                required
+              />
+              <button
+                type="button"
+                onClick={togglePasswordVisibility}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center mt-1"
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-5 w-5 text-gray-500" />
+                ) : (
+                  <Eye className="h-5 w-5 text-gray-500" />
+                )}
+              </button>
+            </div>
           </div>
 
           <div>
             <button
               type="submit"
-              disabled={loading}
+              disabled={isLoading}
               className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Logging in...' : 'Login'}
+              {isLoading ? 'Logging in...' : 'Login'}
             </button>
           </div>
         </form>
