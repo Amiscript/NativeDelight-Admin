@@ -6,6 +6,7 @@ import Logout from '../components/Logout';
 import Link from 'next/link';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../store/store';
+import { useGetUsersQuery } from '../../store/query/AuthApi';
 
 interface SidebarProps {
   activePath?: string;
@@ -13,7 +14,20 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ activePath }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { user } = useSelector((state: RootState) => state.auth);
+  const { token, user: authUser } = useSelector((state: RootState) => state.auth);
+  
+  // Fetch users data
+  const { data: usersResponse, isLoading, isError } = useGetUsersQuery(undefined, {
+    skip: !token,
+  });
+
+  // Safely get the users array
+  const users = usersResponse || [];
+  
+  // Find current user or fall back to authUser
+  const currentUser = Array.isArray(users) 
+    ? users.find(u => u.id === authUser?.id) || authUser
+    : authUser;
 
   const navItems = [
     { path: '/dashboard', icon: Home, label: 'Dashboard' },
@@ -74,15 +88,15 @@ const Sidebar: React.FC<SidebarProps> = ({ activePath }) => {
         <div className="absolute bottom-0 left-0 right-0">
           <div className="flex items-center space-x-3 p-4 bg-gray-800 text-white rounded-lg">
             <Image
-              src={user?.avatar || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e"}
+              src={currentUser?.avatar || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e"}
               alt="User"
               width={40}
               height={40}
               className="h-10 w-10 rounded-full"
             />
             <div className="flex-1">
-              <p className="text-sm font-medium">{user?.name || 'Admin User'}</p>
-              <p className="text-xs text-gray-400">{user?.email || 'admin@example.com'}</p>
+              <p className="text-sm font-medium">{currentUser?.name || 'Admin User'}</p>
+              <p className="text-xs text-gray-400">{currentUser?.email || 'admin@example.com'}</p>
             </div>
             <Logout />
           </div>

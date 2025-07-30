@@ -6,6 +6,7 @@ import { useLoginMutation } from '../store/query/AuthApi';
 import { Eye, EyeOff } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { setCredentials } from '../store/slices/authSlice';
+import { toast } from 'react-toastify';
 
 interface FormData {
   email: string;
@@ -50,9 +51,10 @@ const LoginPage = () => {
     try {
       const response = await login(formData).unwrap();
       dispatch(setCredentials({ token: response.token, user: response.user }));
+      toast.success('Login successful');
       router.push('/dashboard');
     } catch (error) {
-      console.error('Login error:', error);
+      console.log('Login error:', error);
     }
   };
 
@@ -68,7 +70,8 @@ const LoginPage = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-md">
-        <h2 className="text-2xl font-bold text-center mb-6">Login</h2>
+        <h1 className="text-2xl font-bold text-center mb-6 text-orange-800">Native Delight Menu</h1>
+        <h2 className="text-2xl font-bold text-center mb-6"> Admin Login</h2>
         
         {displayError && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">

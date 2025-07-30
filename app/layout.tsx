@@ -1,6 +1,7 @@
+// app/layout.tsx
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { Providers } from '../provider/ReduxProvider';
+import ReduxProvider from '../provider/ReduxProvider';  // Updated import
 import "./globals.css";
 
 const geistSans = Geist({
@@ -25,12 +26,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-         <Providers>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <ReduxProvider>  {/* Updated component name */}
           {children}
-        </Providers>
+        </ReduxProvider>
       </body>
     </html>
   );

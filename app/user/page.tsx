@@ -1,99 +1,86 @@
 'use client';
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { 
-  useGetUsersQuery,
-  useAddUserMutation,
-  useUpdateUserMutation,
-  useDeleteUserMutation,
-  useChangeUserStatusMutation
-} from '../../store/query/AuthApi';
+import React, { useState } from 'react';
+import { useGetUsersQuery, useAddUserMutation, useUpdateUserMutation, useDeleteUserMutation } from '../../store/query/AuthApi';
 import { format } from 'date-fns';
 import Image from 'next/image';
-import { Search, Users, UserCheck, UserMinus, Shield, Download, Plus, Edit, Trash, Ban } from 'lucide-react';
+import { Users, UserCheck, UserMinus, Shield, Download, Plus, Edit, Trash, Ban } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 
-interface UserFormData {
+type Role = 'admin' | 'manager' | 'staff';
+type Status = 'active' | 'inactive';
+
+interface User {
+  id: string;
   name: string;
   email: string;
-  role: 'admin' | 'manager' | 'staff';
-  status: 'active' | 'inactive';
-  avatar: string;
-  avatarFile: File | null;
+  role: Role;
+  status: Status;
+  avatar?: string;
+  lastLogin?: string;
 }
 
 function UserManagementPage() {
-  const router = useRouter();
-  
-  // RTK Query hooks
-  const { data: usersData = [], isLoading, error, refetch } = useGetUsersQuery();
+  // Data fetching
+  const { data: apiResponse, isLoading, error } = useGetUsersQuery();
   const [addUser] = useAddUserMutation();
   const [updateUser] = useUpdateUserMutation();
   const [deleteUser] = useDeleteUserMutation();
-  const [changeStatus] = useChangeUserStatusMutation();
 
-  // Filter states
-  const [selectedRole, setSelectedRole] = useState<'admin' | 'manager' | 'staff' | 'all'>('all');
-  const [selectedStatus, setSelectedStatus] = useState<'active' | 'inactive' | 'all'>('all');
-  
-  // Modal states
+  // State management
+  const users = apiResponse?.users || [];
+  const [selectedRole, setSelectedRole] = useState<Role | 'all'>('all');
+  const [selectedStatus, setSelectedStatus] = useState<Status | 'all'>('all');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isQuickEditOpen, setIsQuickEditOpen] = useState(false);
-  
-  // Selected user states
-  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
-  
+
   // Form states
-  const [addUserData, setAddUserData] = useState<UserFormData>({
+  const [addUserData, setAddUserData] = useState({
     name: '',
     email: '',
-    role: 'staff',
-    status: 'active',
+    role: 'staff' as Role,
+    status: 'active' as Status,
     avatar: '',
-    avatarFile: null
-  });
-  
-  const [editUserData, setEditUserData] = useState<UserFormData>({
-    name: '',
-    email: '',
-    role: 'staff',
-    status: 'active',
-    avatar: '',
-    avatarFile: null
+    avatarFile: null as File | null
   });
 
-  // Filter users based on selected filters
-  const filteredUsers = usersData.filter((user: any) =>
+  const [editUserData, setEditUserData] = useState({
+    name: '',
+    email: '',
+    role: 'staff' as Role,
+    status: 'active' as Status,
+    avatar: '',
+    avatarFile: null as File | null
+  });
+
+  // Filter users
+  const filteredUsers = users.filter(user =>
     (selectedRole === 'all' || user.role === selectedRole) &&
     (selectedStatus === 'all' || user.status === selectedStatus)
   );
 
   // Statistics
   const stats = [
-    { label: 'Total Users', value: usersData.length, icon: Users, color: 'bg-blue-500' },
-    { label: 'Active Users', value: usersData.filter((u: any) => u.status === 'active').length, icon: UserCheck, color: 'bg-green-500' },
-    { label: 'Inactive Users', value: usersData.filter((u: any) => u.status === 'inactive').length, icon: UserMinus, color: 'bg-yellow-500' },
-    { label: 'Admin Users', value: usersData.filter((u: any) => u.role === 'admin').length, icon: Shield, color: 'bg-purple-500' },
+    { label: 'Total Users', value: users.length, icon: Users, color: 'bg-blue-500' },
+    { label: 'Active Users', value: users.filter(u => u.status === 'active').length, icon: UserCheck, color: 'bg-green-500' },
+    { label: 'Inactive Users', value: users.filter(u => u.status === 'inactive').length, icon: UserMinus, color: 'bg-yellow-500' },
+    { label: 'Admin Users', value: users.filter(u => u.role === 'admin').length, icon: Shield, color: 'bg-purple-500' },
   ];
 
-  // Handle add user
+  // Handlers
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const formData = new FormData();
-      formData.append('name', addUserData.name);
-      formData.append('email', addUserData.email);
-      formData.append('role', addUserData.role);
-      formData.append('status', addUserData.status);
-      formData.append('password', generateRandomPassword());
-      
-      if (addUserData.avatarFile) {
-        formData.append('avatar', addUserData.avatarFile);
-      }
-
-      await addUser(formData).unwrap();
+      await addUser({
+        name: addUserData.name,
+        email: addUserData.email,
+        role: addUserData.role,
+        status: addUserData.status,
+        avatarFile: addUserData.avatarFile || undefined,
+        password: generateRandomPassword()
+      }).unwrap();
       
       setIsAddModalOpen(false);
       setAddUserData({
@@ -104,14 +91,12 @@ function UserManagementPage() {
         avatar: '',
         avatarFile: null
       });
-      refetch();
     } catch (error) {
-      console.error('Failed to add user:', error);
+      console.log('Failed to add user:', error);
     }
   };
 
-  // Handle edit user
-  const handleEditUser = (user: any) => {
+  const handleEditUser = (user: User) => {
     setSelectedUser(user);
     setEditUserData({
       name: user.name,
@@ -129,27 +114,24 @@ function UserManagementPage() {
     if (!selectedUser) return;
     
     try {
-      const formData = new FormData();
-      formData.append('name', editUserData.name);
-      formData.append('email', editUserData.email);
-      formData.append('role', editUserData.role);
-      formData.append('status', editUserData.status);
-      
-      if (editUserData.avatarFile) {
-        formData.append('avatar', editUserData.avatarFile);
-      }
-
-      await updateUser({ id: selectedUser.id, formData }).unwrap();
+      await updateUser({
+        id: selectedUser.id,
+        data: {
+          name: editUserData.name,
+          email: editUserData.email,
+          role: editUserData.role,
+          status: editUserData.status,
+          avatarFile: editUserData.avatarFile || undefined
+        }
+      }).unwrap();
       
       setIsQuickEditOpen(false);
       setSelectedUser(null);
-      refetch();
     } catch (error) {
       console.error('Failed to update user:', error);
     }
   };
 
-  // Handle delete user
   const handleDeleteUser = async () => {
     if (!deleteUserId) return;
     
@@ -157,23 +139,22 @@ function UserManagementPage() {
       await deleteUser(deleteUserId).unwrap();
       setIsDeleteModalOpen(false);
       setDeleteUserId(null);
-      refetch();
     } catch (error) {
       console.error('Failed to delete user:', error);
     }
   };
 
-  // Handle status change
-  const handleStatusChange = async (userId: string, status: 'active' | 'inactive') => {
+  const handleStatusChange = async (userId: string, status: Status) => {
     try {
-      await changeStatus({ id: userId, status }).unwrap();
-      refetch();
+      await updateUser({
+        id: userId,
+        data: { status }
+      }).unwrap();
     } catch (error) {
       console.error('Failed to change user status:', error);
     }
   };
 
-  // Handle file upload for avatar
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>, isEdit: boolean = false) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -199,10 +180,10 @@ function UserManagementPage() {
     }
   };
 
-  // Generate random password
-  const generateRandomPassword = () => {
-    return Math.random().toString(36).slice(-8);
-  };
+  const generateRandomPassword = () => Math.random().toString(36).slice(-8);
+
+  if (isLoading) return <div className="flex justify-center items-center h-screen">Loading...</div>;
+  if (error) return <div className="flex justify-center items-center h-screen text-red-500">Error loading users</div>
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row">
@@ -210,7 +191,28 @@ function UserManagementPage() {
       
       {/* Main Content */}
       <div className="flex-1 md:ml-20 p-4 sm:p-8">
-        {/* Header and Statistics sections remain the same as before */}
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
+          <p className="text-gray-600">Manage all users in your organization</p>
+        </div>
+        
+        {/* Statistics */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          {stats.map((stat, index) => (
+            <div key={index} className="bg-white rounded-lg shadow p-4">
+              <div className="flex items-center">
+                <div className={`p-3 rounded-full ${stat.color} text-white mr-4`}>
+                  <stat.icon className="h-6 w-6" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">{stat.label}</p>
+                  <p className="text-2xl font-semibold text-gray-900">{stat.value}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
         
         {/* Control Panel */}
         <div className="bg-white rounded-lg shadow p-4 mb-8">
@@ -219,7 +221,7 @@ function UserManagementPage() {
               <select
                 className="border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={selectedRole}
-                onChange={(e) => setSelectedRole(e.target.value as any)}
+                onChange={(e) => setSelectedRole(e.target.value as Role | 'all')}
               >
                 <option value="all">All Roles</option>
                 <option value="admin">Admin</option>
@@ -229,7 +231,7 @@ function UserManagementPage() {
               <select
                 className="border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value as any)}
+                onChange={(e) => setSelectedStatus(e.target.value as Status | 'all')}
               >
                 <option value="all">All Status</option>
                 <option value="active">Active</option>
@@ -265,68 +267,116 @@ function UserManagementPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredUsers.map((user: any) => (
-                <tr key={user.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <Image 
-                        className="h-10 w-10 rounded-full" 
-                        src={user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}`} 
-                        alt={user.name}
-                        width={40} 
-                        height={40} 
-                      />
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">{user.name}</div>
-                        <div className="text-sm text-gray-500">{user.email}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      {user.role}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      user.status === 'active'
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {user.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {format(new Date(user.lastLogin), 'MMM d, yyyy HH:mm')}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex items-center justify-end space-x-3">
-                      <button
-                        onClick={() => handleEditUser(user)}
-                        className="text-blue-600 hover:text-blue-900"
-                      >
-                        <Edit className="h-5 w-5" />
-                      </button>
-                      <button 
-                        className="text-yellow-600 hover:text-yellow-900"
-                        onClick={() => handleStatusChange(user.id, user.status === 'active' ? 'inactive' : 'active')}
-                      >
-                        <Ban className="h-5 w-5" />
-                      </button>
-                      <button
-                        className="text-red-600 hover:text-red-900"
-                        onClick={() => {
-                          setDeleteUserId(user.id);
-                          setIsDeleteModalOpen(true);
-                        }}
-                      >
-                        <Trash className="h-5 w-5" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
+  {filteredUsers.map((user, index) => {
+    // Create a guaranteed unique key
+    const uniqueKey = user.id 
+      ? `user-${user.id}`
+      : `user-${user.email}-${index}`; // Fallback using email + index
+    
+    // Generate initials for avatar fallback
+    const initials = user.name
+      ? user.name.split(' ').map(n => n[0]).join('').toUpperCase()
+      : 'US'; // Default initials
+
+    return (
+      <tr key={uniqueKey} className="hover:bg-gray-50">
+        {/* Avatar and Name Cell */}
+        <td className="px-6 py-4 whitespace-nowrap">
+          <div className="flex items-center">
+            {user.avatar ? (
+              <Image 
+                className="h-10 w-10 rounded-full" 
+                src={user.avatar}
+                alt={user.name || 'User avatar'}
+                width={40}
+                height={40}
+              />
+            ) : (
+              <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                <span className="text-gray-600 font-medium">
+                  {initials}
+                </span>
+              </div>
+            )}
+            <div className="ml-4">
+              <div className="text-sm font-medium text-gray-900">
+                {user.name || 'Unknown User'}
+              </div>
+              <div className="text-sm text-gray-500">
+                {user.email || 'No email provided'}
+              </div>
+            </div>
+          </div>
+        </td>
+
+        {/* Role Cell */}
+        <td className="px-6 py-4 whitespace-nowrap">
+          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+            user.role === 'admin' ? 'bg-purple-100 text-purple-800' :
+            user.role === 'manager' ? 'bg-blue-100 text-blue-800' :
+            'bg-gray-100 text-gray-800'
+          }`}>
+            {user.role || 'N/A'}
+          </span>
+        </td>
+
+        {/* Status Cell */}
+        <td className="px-6 py-4 whitespace-nowrap">
+          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+            user.status === 'active' ? 'bg-green-100 text-green-800' : 
+            'bg-red-100 text-red-800'
+          }`}>
+            {user.status || 'N/A'}
+          </span>
+        </td>
+
+        {/* Last Login Cell */}
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+          {user.lastLogin 
+            ? format(new Date(user.lastLogin), 'MMM d, yyyy HH:mm') 
+            : 'Never logged in'}
+        </td>
+
+        {/* Actions Cell */}
+        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+          <div className="flex items-center justify-end space-x-3">
+            <button
+              onClick={() => handleEditUser(user)}
+              className="text-blue-600 hover:text-blue-900"
+              aria-label={`Edit ${user.name || 'user'}`}
+            >
+              <Edit className="h-5 w-5" />
+            </button>
+            <button 
+              className="text-yellow-600 hover:text-yellow-900"
+              onClick={() => handleStatusChange(
+                user.id || '', 
+                user.status === 'active' ? 'inactive' : 'active'
+              )}
+              aria-label={`Toggle status for ${user.name || 'user'}`}
+              disabled={!user.id}
+            >
+              <Ban className="h-5 w-5" />
+            </button>
+            <button
+              className="text-red-600 hover:text-red-900"
+              onClick={() => {
+                if (user.id) {
+                  setDeleteUserId(user.id);
+                  setIsDeleteModalOpen(true);
+                }
+              }}
+              aria-label={`Delete ${user.name || 'user'}`}
+              disabled={!user.id}
+            >
+              <Trash className="h-5 w-5" />
+            </button>
+          </div>
+        </td>
+      </tr>
+    );
+  })}
+</tbody>
           </table>
         </div>
 
@@ -370,7 +420,7 @@ function UserManagementPage() {
                   <select
                     className="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     value={addUserData.role}
-                    onChange={e => setAddUserData({...addUserData, role: e.target.value as any})}
+                    onChange={e => setAddUserData({...addUserData, role: e.target.value as Role})}
                     required
                   >
                     <option value="admin">Admin</option>
@@ -383,7 +433,7 @@ function UserManagementPage() {
                   <select
                     className="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     value={addUserData.status}
-                    onChange={e => setAddUserData({...addUserData, status: e.target.value as any})}
+                    onChange={e => setAddUserData({...addUserData, status: e.target.value as Status})}
                     required
                   >
                     <option value="active">Active</option>
@@ -426,9 +476,8 @@ function UserManagementPage() {
                   <button
                     type="submit"
                     className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
-                    disabled={isLoading}
                   >
-                    {isLoading ? 'Adding...' : 'Add User'}
+                    Add User
                   </button>
                 </div>
               </form>
@@ -463,9 +512,8 @@ function UserManagementPage() {
                 <button
                   className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md"
                   onClick={handleDeleteUser}
-                  disabled={isLoading}
                 >
-                  {isLoading ? 'Deleting...' : 'Delete'}
+                  Delete
                 </button>
               </div>
             </div>
@@ -544,7 +592,7 @@ function UserManagementPage() {
                           <select
                             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                             value={editUserData.role}
-                            onChange={e => setEditUserData({...editUserData, role: e.target.value as any})}
+                            onChange={e => setEditUserData({...editUserData, role: e.target.value as Role})}
                           >
                             <option value="admin">Admin</option>
                             <option value="manager">Manager</option>
@@ -556,7 +604,7 @@ function UserManagementPage() {
                           <select
                             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                             value={editUserData.status}
-                            onChange={e => setEditUserData({...editUserData, status: e.target.value as any})}
+                            onChange={e => setEditUserData({...editUserData, status: e.target.value as Status})}
                           >
                             <option value="active">Active</option>
                             <option value="inactive">Inactive</option>
@@ -577,9 +625,8 @@ function UserManagementPage() {
                       type="submit"
                       className="bg-blue-600 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                       onClick={handleUpdateUser}
-                      disabled={isLoading}
                     >
-                      {isLoading ? 'Saving...' : 'Save Changes'}
+                      Save Changes
                     </button>
                   </div>
                 </div>

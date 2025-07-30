@@ -29,7 +29,7 @@ interface AddUserRequest {
 export const authApi = createApi({
   reducerPath: 'authApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: `${process.env.NEXT_PUBLIC_API_URL}/api/auth`,
+    baseUrl: `${process.env.NEXT_PUBLIC_API_URL}/auth`,
     prepareHeaders: (headers, { getState }) => {
       const token = (getState() as RootState).auth.token;
       if (token) {
@@ -65,7 +65,7 @@ export const authApi = createApi({
         }
 
         return {
-          url: '/users',
+          url: '/add-user',
           method: 'POST',
           body: formData,
         };
@@ -96,12 +96,23 @@ export const authApi = createApi({
       }),
       invalidatesTags: ['User'],
     }),
+logout: builder.mutation<void, void>({
+  query: () => ({
+    url: '/logout',
+    method: 'POST',
+  }),
+  // This will invalidate all cached data
+  invalidatesTags: ['User'],
+}),
+
+
   }),
 });
 
 export const {
   useLoginMutation,
   useGetUsersQuery,
+   useLogoutMutation,
   useAddUserMutation,
   useUpdateUserMutation,
   useDeleteUserMutation,
