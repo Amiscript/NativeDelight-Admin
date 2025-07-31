@@ -1,4 +1,4 @@
-// utils/api.ts
+
 import axios, {
   AxiosRequestConfig,
   AxiosError,
@@ -6,7 +6,6 @@ import axios, {
   AxiosResponse,
   AxiosHeaders
 } from 'axios';
-import { store } from '@/store/store';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
 
@@ -28,12 +27,10 @@ const api = axios.create({
 // Request interceptor
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = store.getState().auth.token || localStorage.getItem('token');
+ 
     const headers = new AxiosHeaders(config.headers);
     
-    if (token) {
-      headers.set('Authorization', `Bearer ${token}`);
-    }
+   
 
     if (config.data instanceof FormData) {
       headers.set('Content-Type', 'multipart/form-data');
@@ -134,5 +131,5 @@ export const upload = async <T>(url: string, formData: FormData): Promise<T> => 
   }
 };
 
-export type { ApiError };
+// export type { ApiError };
 export default api;
