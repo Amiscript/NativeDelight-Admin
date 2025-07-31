@@ -2,8 +2,8 @@
 import { useState } from 'react';
 import { LogOut } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useDispatch } from 'react-redux';
-import { AppDispatch } from '../../store/store';
+// import { useDispatch } from 'react-redux';
+// import { AppDispatch } from '../../store/store';
 
 import { useLogoutMutation } from '../../store/query/AuthApi';
 import { toast } from 'react-toastify';
@@ -11,7 +11,7 @@ import { toast } from 'react-toastify';
 const Logout = () => {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const dispatch = useDispatch<AppDispatch>();
+  // const dispatch = useDispatch<AppDispatch>();
   const [logoutApi] = useLogoutMutation();
 
   const handleLogout = async () => {

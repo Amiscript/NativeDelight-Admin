@@ -2,11 +2,11 @@
 
 import React, { useState } from 'react';
 import Sidebar from '../components/Sidebar';
-import Image from 'next/image';
+// import Image from 'next/image';
 import { format } from 'date-fns';
 import {
-  Settings as SettingsIcon,
-  LogOut,
+  // Settings as SettingsIcon,
+  // LogOut,
   Upload,
   ChevronRight,
   Save,
@@ -34,7 +34,6 @@ const App: React.FC = () => {
     sunday: { open: '10:00', close: '22:00' }
   });
 
-  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleSectionToggle = (section: Section) => { 
     setExpandedSection(prevSection => (prevSection === section ? null : section));

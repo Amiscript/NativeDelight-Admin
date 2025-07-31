@@ -1,7 +1,7 @@
 "use client";
 
 import Sidebar from '../components/Sidebar';
-import Image from "next/image";
+// import Image from "next/image";
 import React from 'react';
 import { format } from 'date-fns';
 import {

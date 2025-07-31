@@ -6,7 +6,7 @@ import OrderFilters from '../components/orderComp/orderFilter';
 import OrderTable from '../components/orderComp/OrderTable';
 import StatusUpdatePanel from '../components/orderComp/StatusUapdate';
 import CancelOrderModal from '../components/orderComp/CancelOrderModal';
-import { Order, DateRange, OrderItem } from '../components/orderComp/types';
+import { Order, DateRange} from '../components/orderComp/types';
 
 const OrdersPage: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([

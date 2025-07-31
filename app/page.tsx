@@ -58,12 +58,21 @@ const LoginPage = () => {
     }
   };
 
+  interface LoginError {
+    data?: {
+      errors?: {
+        email?: string[];
+        password?: string[];
+      };
+    };
+  }
+
   const displayError: DisplayError | null = error ? {
     message: 'Login failed',
     details: 'Invalid email or password',
     fieldErrors: {
-      email: (error as any)?.data?.errors?.email?.[0],
-      password: (error as any)?.data?.errors?.password?.[0],
+      email: (error as LoginError)?.data?.errors?.email?.[0],
+      password: (error as LoginError)?.data?.errors?.password?.[0],
     },
   } : null;
 

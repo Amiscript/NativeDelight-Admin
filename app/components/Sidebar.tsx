@@ -17,7 +17,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activePath }) => {
   const { token, user: authUser } = useSelector((state: RootState) => state.auth);
   
   // Fetch users data
-  const { data: usersResponse, isLoading, isError } = useGetUsersQuery(undefined, {
+  const { data: usersResponse } = useGetUsersQuery(undefined, {
     skip: !token,
   });
 

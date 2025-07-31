@@ -27,7 +27,7 @@ function UserManagementPage() {
   const [deleteUser] = useDeleteUserMutation();
 
   // State management
-  const users = apiResponse?.users || [];
+  const users = apiResponse || [];
   const [selectedRole, setSelectedRole] = useState<Role | 'all'>('all');
   const [selectedStatus, setSelectedStatus] = useState<Status | 'all'>('all');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
