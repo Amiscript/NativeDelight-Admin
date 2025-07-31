@@ -21,12 +21,23 @@ const Sidebar: React.FC<SidebarProps> = ({ activePath }) => {
     skip: !token,
   });
 
+  // Define a User type for better type safety
+  interface User {
+    id: string | number;
+    name?: string;
+    email?: string;
+    avatar?: string;
+    // add other properties as needed
+  }
+
   // Safely get the users array
-  const users = usersResponse || [];
+  const users: User[] = Array.isArray((usersResponse)?.users)
+    ? (usersResponse).users
+    : [];
   
   // Find current user or fall back to authUser
   const currentUser = Array.isArray(users) 
-    ? users.find(u => u.id === authUser?.id) || authUser
+    ? users.find((u: User) => u.id === authUser?.id) || authUser
     : authUser;
 
   const navItems = [

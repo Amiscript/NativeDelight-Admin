@@ -8,7 +8,7 @@ interface SubCategory {
   order: number;
 }
 
-interface Category {
+interface  Category {
   id: number;
   name: string;
   description: string;

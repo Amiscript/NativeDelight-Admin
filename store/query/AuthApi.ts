@@ -10,7 +10,14 @@ interface User {
   status: 'active' | 'inactive';
   avatar?: string;
   lastLogin?: string;
+ 
 }
+interface UsersResponse {
+  data: User[];
+  users: User[];
+  count: number;
+}
+
 
 interface LoginResponse {
   token: string;
@@ -47,8 +54,8 @@ export const authApi = createApi({
         body: credentials,
       }),
     }),
-    getUsers: builder.query<User[], void>({
-      query: () => '/users',
+    getUsers: builder.query<UsersResponse, void>({
+      query: ( ) => '/users',
       providesTags: ['User'],
     }),
     addUser: builder.mutation<User, AddUserRequest>({

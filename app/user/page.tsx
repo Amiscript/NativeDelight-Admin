@@ -9,6 +9,7 @@ import Sidebar from '../components/Sidebar';
 type Role = 'admin' | 'manager' | 'staff';
 type Status = 'active' | 'inactive';
 
+
 interface User {
   id: string;
   name: string;
@@ -22,12 +23,13 @@ interface User {
 function UserManagementPage() {
   // Data fetching
   const { data: apiResponse, isLoading, error } = useGetUsersQuery();
+const users: User[] = apiResponse?.data || apiResponse?.users || [];
   const [addUser] = useAddUserMutation();
   const [updateUser] = useUpdateUserMutation();
   const [deleteUser] = useDeleteUserMutation();
 
-  // State management
-  const users = apiResponse || [];
+  
+
   const [selectedRole, setSelectedRole] = useState<Role | 'all'>('all');
   const [selectedStatus, setSelectedStatus] = useState<Status | 'all'>('all');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -268,6 +270,7 @@ function UserManagementPage() {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
   {filteredUsers.map((user, index) => {
+
     // Create a guaranteed unique key
     const uniqueKey = user.id 
       ? `user-${user.id}`

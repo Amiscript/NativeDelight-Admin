@@ -5,8 +5,10 @@ import authReducer from '../store/slices/authSlice';
 import productReducer from '../store/slices/productSlice';
 import categoryReducer from '../store/slices/categorySlice';
 import orderReducer from '../store/slices/orderSlice';
+import dashboardReducer from '../store/slices/dashboardSlice';
 import { authApi } from '../store/query/AuthApi';
-// import { productApi } from '../store/query/productApi';
+import { dashboardApi } from '../store/query/DashboardApi';
+import { productApi } from '../store/query/ProductApi';
 import { orderApi } from '../store/query/OrderApi';
 import { categoryApi } from '../store/query/CategoryApi';
 
@@ -36,8 +38,11 @@ export const makeStore = () => {
       products: productReducer,
       categories: categoryReducer,
       orders: orderReducer,
+      dashboard: dashboardReducer,
       [categoryApi.reducerPath]: categoryApi.reducer,
+      [dashboardApi.reducerPath]: dashboardApi.reducer,
       [orderApi.reducerPath]: orderApi.reducer,
+      [productApi.reducerPath]: productApi.reducer,
     
       [authApi.reducerPath]: authApi.reducer,
     },
@@ -47,7 +52,7 @@ export const makeStore = () => {
     middleware: (getDefaultMiddleware) =>
       getDefaultMiddleware({
         serializableCheck: false,
-      }).concat(authApi.middleware,  orderApi.middleware, categoryApi.middleware),
+      }).concat(authApi.middleware,  orderApi.middleware, categoryApi.middleware, dashboardApi.middleware, productApi.middleware),
   });
 
   setupListeners(store.dispatch);
