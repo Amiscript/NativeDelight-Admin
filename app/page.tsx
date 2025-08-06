@@ -31,7 +31,6 @@ const LoginPage = () => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [login, { isLoading, error }] = useLoginMutation();
-  console.log(login);
   const router = useRouter();
   const dispatch = useDispatch();
 
@@ -52,7 +51,12 @@ const LoginPage = () => {
       const response = await login(formData).unwrap();
       dispatch(setCredentials({ token: response.token, user: response.user }));
       toast.success('Login successful');
-      router.push('/dashboard');
+      const timeoutId = setTimeout(() => {
+        router.push('/dashboard');
+      }, 3000);
+
+      return () => clearTimeout(timeoutId);
+
     } catch (error) {
       console.log('Login error:', error);
     }

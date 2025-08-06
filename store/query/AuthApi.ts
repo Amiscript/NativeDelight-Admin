@@ -33,7 +33,7 @@ interface AddUserRequest {
   password: string;
 }
 
-export const authApi = createApi({
+export const authApi = createApi({ 
   reducerPath: 'authApi',
   baseQuery: fetchBaseQuery({
     baseUrl: `${process.env.NEXT_PUBLIC_API_URL}/auth`,
