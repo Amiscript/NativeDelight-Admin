@@ -12,17 +12,14 @@ const Logout = () => {
   const dispatch = useDispatch();
 
   const handleLogout = () => {
-    // if (!confirm('Are you sure you want to logout?')) return;
-    
     setIsLoading(true);
     try {
-      dispatch(logout()); // Clear auth state
+      dispatch(logout()); 
       toast.success('Logged out successfully');
       router.push('/');
     } catch (error) {
       console.error('Logout error:', error);
       toast.error('Logout failed. Please try again.');
-      // Force clear auth state even if something fails
       dispatch(logout());
       router.push('/login');
     } finally {

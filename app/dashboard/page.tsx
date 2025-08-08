@@ -1,26 +1,19 @@
 "use client";
-
 import Sidebar from '../components/Sidebar';
-// import Image from "next/image";
 import React from 'react';
 import { format } from 'date-fns';
 import {
   Search,
-  // Bell,
-  // Package,
-  // LogOut,
   TrendingUp,
   ShoppingCart,
-  // Star,
   ArrowUp,
   ArrowDown,
-  // BarChart2,
-  AlertTriangle,
-  // Plus,
+  RefreshCw,
+
 } from 'lucide-react';
 import {
-  LineChart,
-  Line,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -29,51 +22,82 @@ import {
   PieChart as RePieChart,
   Pie,
   Cell,
-  BarChart,
-  Bar,
 } from 'recharts';
+import {
+  useGetDashboardDataQuery,
+  useRefreshDashboardMutation,
+} from '../../store/query/DashboardApi';
 
-// Mock data for charts
-const salesData = [
-  { name: 'Mon', value: 4000 },
-  { name: 'Tue', value: 3000 },
-  { name: 'Wed', value: 2000 },
-  { name: 'Thu', value: 2780 },
-  { name: 'Fri', value: 1890 },
-  { name: 'Sat', value: 2390 },
-  { name: 'Sun', value: 3490 },
-];
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
-const categoryData = [
-  { name: 'Main Course', value: 400 },
-  { name: 'Appetizers', value: 300 },
-  { name: 'Desserts', value: 300 },
-  { name: 'Beverages', value: 200 },
-];
+export default function Dashboard() {
+  const [period, setPeriod] = React.useState<'day' | 'month' | 'year'>('day');
+  
+  const {
+    data: dashboardData,
+    isLoading,
+    isError,
+    refetch,
+  } = useGetDashboardDataQuery({ period });
 
-const hourlyData = [
-  { hour: '11:00', orders: 15 },
-  { hour: '12:00', orders: 30 },
-  { hour: '13:00', orders: 45 },
-  { hour: '14:00', orders: 25 },
-  { hour: '15:00', orders: 20 },
-  { hour: '16:00', orders: 35 },
-];
+  const [refreshDashboard] = useRefreshDashboardMutation();
+ 
 
-const popularItems = [
-  { name: 'Margherita Pizza', orders: 145 },
-  { name: 'Chicken Wings', orders: 120 },
-  { name: 'Caesar Salad', orders: 98 },
-  { name: 'Chocolate Cake', orders: 87 },
-];
+  const handleRefresh = async () => {
+    try {
+      await refreshDashboard().unwrap();
+      refetch();
+    } catch (error) {
+      console.log('Failed to refresh dashboard:', error);
+    }
+  };
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
-export default function Home() {
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col lg:flex-row">
+        <Sidebar activePath="/dashboard" />
+        <div className="flex-1 p-4 md:p-6 lg:p-8 flex items-center justify-center">
+          <div>Loading dashboard data...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (isError || !dashboardData) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col lg:flex-row">
+        <Sidebar activePath="/dashboard" />
+        <div className="flex-1 p-4 md:p-6 lg:p-8 flex items-center justify-center">
+          <div>Error loading dashboard data</div>
+          <button 
+            onClick={() => refetch()}
+            className="ml-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const {
+    dailyRevenue,
+    totalOrders,
+    averageOrderValue,
+    salesByDay,
+    topItems
+  } = dashboardData;
+
+  // Calculate percentage changes (these would typically come from your API)
+  const revenueChange = 12; // Example value
+  const ordersChange = 8; 
+  const avgOrderChange = -3; 
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col lg:flex-row">
-       <Sidebar activePath="/dashboard" />
+      <Sidebar activePath="/dashboard" />
 
       {/* Main Content */}
       <div className="flex-1 p-4 md:p-6 lg:p-8">
@@ -90,10 +114,20 @@ export default function Home() {
             </div>
             <span className="text-gray-500 hidden sm:inline">{format(new Date(), 'MMMM d, yyyy')}</span>
           </div>
-          <div className="flex items-center space-x-4">
-            <button className="relative">
-             
+          <div className="flex items-center space-x-2">
+            <button 
+              onClick={handleRefresh}
+              className="flex items-center space-x-1 px-3 py-2 bg-white border rounded-lg hover:bg-gray-50"
+            >
+              <RefreshCw className="h-4 w-4" />
+              <span>Refresh</span>
             </button>
+            <div className="relative group">
+            
+              <div className="absolute right-0 mt-1 w-40 bg-white rounded-md shadow-lg z-10 hidden group-hover:block">
+               
+              </div>
+            </div>
           </div>
         </header>
 
@@ -102,17 +136,23 @@ export default function Home() {
           <div className="bg-white rounded-lg shadow-sm p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <p className="text-gray-500 text-sm">Todays Revenue</p>
-                <h3 className="text-2xl font-bold">₦3,240</h3>
+                <p className="text-gray-500 text-sm">Today Revenue</p>
+                <h3 className="text-2xl font-bold">₦{dailyRevenue.toLocaleString()}</h3>
               </div>
               <div className="bg-green-100 p-3 rounded-lg">
                 <span className="h-6 w-6 text-green-600">₦</span>
               </div>
             </div>
             <div className="flex items-center text-sm">
-              <ArrowUp className="h-4 w-4 text-green-500 mr-1" />
-              <span className="text-green-500 font-medium">12%</span>
-              <span className="text-gray-500 ml-2">vs last week</span>
+              {revenueChange >= 0 ? (
+                <ArrowUp className="h-4 w-4 text-green-500 mr-1" />
+              ) : (
+                <ArrowDown className="h-4 w-4 text-red-500 mr-1" />
+              )}
+              <span className={revenueChange >= 0 ? "text-green-500 font-medium" : "text-red-500 font-medium"}>
+                {Math.abs(revenueChange)}%
+              </span>
+             
             </div>
           </div>
 
@@ -120,16 +160,22 @@ export default function Home() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <p className="text-gray-500 text-sm">Total Orders</p>
-                <h3 className="text-2xl font-bold">156</h3>
+                <h3 className="text-2xl font-bold">{totalOrders}</h3>
               </div>
               <div className="bg-blue-100 p-3 rounded-lg">
                 <ShoppingCart className="h-6 w-6 text-blue-600" />
               </div>
             </div>
             <div className="flex items-center text-sm">
-              <ArrowUp className="h-4 w-4 text-green-500 mr-1" />
-              <span className="text-green-500 font-medium">8%</span>
-              <span className="text-gray-500 ml-2">vs last week</span>
+              {ordersChange >= 0 ? (
+                <ArrowUp className="h-4 w-4 text-green-500 mr-1" />
+              ) : (
+                <ArrowDown className="h-4 w-4 text-red-500 mr-1" />
+              )}
+              <span className={ordersChange >= 0 ? "text-green-500 font-medium" : "text-red-500 font-medium"}>
+                {Math.abs(ordersChange)}%
+              </span>
+           
             </div>
           </div>
 
@@ -137,16 +183,22 @@ export default function Home() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <p className="text-gray-500 text-sm">Average Order</p>
-                <h3 className="text-2xl font-bold">₦24.50</h3>
+                <h3 className="text-2xl font-bold">₦{averageOrderValue.toLocaleString()}</h3>
               </div>
               <div className="bg-yellow-100 p-3 rounded-lg">
                 <TrendingUp className="h-6 w-6 text-yellow-600" />
               </div>
             </div>
             <div className="flex items-center text-sm">
-              <ArrowDown className="h-4 w-4 text-red-500 mr-1" />
-              <span className="text-red-500 font-medium">3%</span>
-              <span className="text-gray-500 ml-2">vs last week</span>
+              {avgOrderChange >= 0 ? (
+                <ArrowUp className="h-4 w-4 text-green-500 mr-1" />
+              ) : (
+                <ArrowDown className="h-4 w-4 text-red-500 mr-1" />
+              )}
+              <span className={avgOrderChange >= 0 ? "text-green-500 font-medium" : "text-red-500 font-medium"}>
+                {Math.abs(avgOrderChange)}%
+              </span>
+              {/* <span className="text-gray-500 ml-2">vs yesterday</span> */}
             </div>
           </div>
         </div>
@@ -157,48 +209,57 @@ export default function Home() {
           <div className="bg-white rounded-lg shadow-sm p-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-2">
               <h3 className="text-lg font-medium">Sales Performance</h3>
-              <select className="border rounded-lg px-3 py-1 text-sm">
-                <option>Last 7 days</option>
-                <option>Last 30 days</option>
-                <option>Last 90 days</option>
+              <select 
+                value={period}
+                onChange={(e) => setPeriod(e.target.value as 'day' | 'month' | 'year')}
+                className="border rounded-lg px-3 py-1 text-sm"
+              >
+                <option value="day">Today</option>
+                <option value="month">This Month</option>
+                <option value="year">This Year</option>
               </select>
             </div>
             <div className="h-64 md:h-80">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={salesData}>
+                <BarChart data={salesByDay}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
+                  <XAxis dataKey="day" />
                   <YAxis />
                   <Tooltip />
-                  <Line type="monotone" dataKey="value" stroke="#3B82F6" strokeWidth={2} />
-                </LineChart>
+                  <Bar dataKey="totalSales" fill="#3B82F6" />
+                </BarChart>
               </ResponsiveContainer>
             </div>
           </div>
 
-          {/* Category Chart */}
+          {/* Top Items Chart */}
           <div className="bg-white rounded-lg shadow-sm p-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-2">
-              <h3 className="text-lg font-medium">Category Performance</h3>
-              <select className="border rounded-lg px-3 py-1 text-sm">
-                <option>By Revenue</option>
-                <option>By Orders</option>
+              <h3 className="text-lg font-medium">Top Selling Items</h3>
+              <select 
+                value={period}
+                onChange={(e) => setPeriod(e.target.value as 'day' | 'month' | 'year')}
+                className="border rounded-lg px-3 py-1 text-sm"
+              >
+                <option value="day">Today</option>
+                <option value="month">This Month</option>
+                <option value="year">This Year</option>
               </select>
             </div>
             <div className="h-64 md:h-80">
               <ResponsiveContainer width="100%" height="100%">
                 <RePieChart>
                   <Pie
-                    data={categoryData}
+                    data={topItems}
                     cx="50%"
                     cy="50%"
                     innerRadius={60}
                     outerRadius={80}
                     fill="#8884d8"
                     paddingAngle={5}
-                    dataKey="value"
+                    dataKey="totalOrdered"
                   >
-                    {categoryData.map((entry, index) => (
+                    {topItems.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
@@ -206,7 +267,7 @@ export default function Home() {
                 </RePieChart>
               </ResponsiveContainer>
               <div className="grid grid-cols-2 gap-4 mt-4">
-                {categoryData.map((item, index) => (
+                {topItems.map((item, index) => (
                   <div key={item.name} className="flex items-center space-x-2">
                     <div className={`w-3 h-3 rounded-full`} style={{ backgroundColor: COLORS[index] }} />
                     <span className="text-sm text-gray-600">{item.name}</span>
@@ -217,59 +278,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Secondary Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mb-8">
-          {/* Hourly Orders */}
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <h3 className="text-lg font-medium mb-6">Hourly Orders</h3>
-            <div className="h-48 md:h-60">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={hourlyData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="hour" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="orders" fill="#3B82F6" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          {/* Popular Items */}
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <h3 className="text-lg font-medium mb-6">Popular Items</h3>
-            <div className="space-y-4">
-              {popularItems.map((item, index) => (
-                <div key={item.name} className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <span className="text-gray-500">{index + 1}</span>
-                    <span className="font-medium">{item.name}</span>
-                  </div>
-                  <span className="text-gray-500">{item.orders} orders</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Alerts */}
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <h3 className="text-lg font-medium mb-6">Inventory Alerts</h3>
-            <div className="space-y-4">
-              <div className="flex items-center space-x-3 text-yellow-600 bg-yellow-50 p-3 rounded-lg">
-                <AlertTriangle className="h-5 w-5" />
-                <span className="text-sm">Low stock: Chicken Wings (5 left)</span>
-              </div>
-              <div className="flex items-center space-x-3 text-red-600 bg-red-50 p-3 rounded-lg">
-                <AlertTriangle className="h-5 w-5" />
-                <span className="text-sm">Out of stock: Mozzarella Cheese</span>
-              </div>
-              <div className="flex items-center space-x-3 text-blue-600 bg-blue-50 p-3 rounded-lg">
-                <AlertTriangle className="h-5 w-5" />
-                <span className="text-sm">Reorder needed: Tomato Sauce</span>
-              </div>
-            </div>
-          </div>
-        </div>
+    
       </div>
     </div>
   );
