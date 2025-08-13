@@ -183,15 +183,15 @@ const handleUpdateUser = async (e: React.FormEvent) => {
   if (!deleteUserId) return;
   
   try {
-    console.log("Attempting to delete user with ID:", deleteUserId); // Add this
+    console.log("Attempting to delete user with ID:", deleteUserId); 
     const response = await deleteUser(deleteUserId).unwrap();
-    console.log("Delete response:", response); // Add this
+    console.log("Delete response:", response); 
     toast.success(response.message || 'User deleted successfully');
     setIsDeleteModalOpen(false);
     setDeleteUserId(null);
     refetch();
   } catch (error) {
-    console.error("Delete error:", error); // Add this
+    console.error("Delete error:", error); 
     if (isApiError(error)) {
       toast.error(error.data?.message || 'Failed to delete user');
     } else {
