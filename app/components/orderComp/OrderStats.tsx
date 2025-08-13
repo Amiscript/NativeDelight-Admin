@@ -12,7 +12,6 @@ interface OrderStatsProps {
 const OrderStats: React.FC<OrderStatsProps> = ({
   totalOrders,
   pendingOrders,
-  preparingOrders,
   deliveredOrders,
   cancelledOrders,
   processingOrders,
