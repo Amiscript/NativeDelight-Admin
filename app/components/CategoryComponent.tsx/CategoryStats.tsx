@@ -1,11 +1,10 @@
 // components/CategoryStats.tsx
 import React from 'react';
-import { Category } from './types';
 
 interface CategoryStatsProps {
   totalCategories: number;
   activeCategories: number;
-  mostUsedCategory: Category | null;
+  mostUsedCategory: {name: string; totalOrdered: number; _id: string} | null;
   unusedCategories: number;
 }
 
@@ -41,15 +40,15 @@ const CategoryStats: React.FC<CategoryStatsProps> = ({
 
       {/* Most Used Category Card */}
       <div className="bg-white rounded-lg shadow p-4 flex items-center">
-        <div className="rounded-full bg-purple-100 p-3 mr-4">
+        <div className="rounded-full bg-purple-100 p-3 mr-4">  
           <i className="fas fa-star text-purple-600 text-xl"></i>
         </div>
         <div>
           <p className="text-gray-500 text-sm">Most Used Category</p>
           <h3 className="text-xl font-bold truncate">{mostUsedCategory?.name || 'N/A'}</h3>
           <p className="text-xs text-gray-500">
-            {mostUsedCategory ? `${mostUsedCategory.itemsCount} items` : ''}
-          </p>
+            {mostUsedCategory?.totalOrdered ? `${mostUsedCategory.totalOrdered} items` : ''}
+          </p>   
         </div>
       </div>
 

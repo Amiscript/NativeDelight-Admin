@@ -5,10 +5,10 @@ import { Category } from './types';
 
 interface CategoryListProps {
   categories: Category[];
-  expandedCategoryId: number | null;
+  expandedCategoryId: string | null;
   onEdit: (category: Category) => void;
-  onDelete: (categoryId: number) => void;
-  onToggleDetails: (categoryId: number) => void;
+  onDelete: (categoryId: string) => void;
+  onToggleDetails: (categoryId: string) => void;
   formatDate: (dateString: string) => string;
 }
 
@@ -48,13 +48,13 @@ const CategoryList: React.FC<CategoryListProps> = ({
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {categories.map((category) => (
-              <React.Fragment key={category.id}>
-                <tr className="hover:bg-gray-50 cursor-pointer" onClick={() => onToggleDetails(category.id)}>
+              <React.Fragment key={category._id}>
+                <tr className="hover:bg-gray-50 cursor-pointer" onClick={() => onToggleDetails(category._id)}>
                   <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className="h-10 w-10 flex-shrink-0 mr-3">
                         <Image
-                          src={category.image}
+                          src={category.image.url}
                           alt={category.name}
                           width={40}
                           height={40}
@@ -97,7 +97,7 @@ const CategoryList: React.FC<CategoryListProps> = ({
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          onDelete(category.id);
+                          onDelete(category._id);
                         }}
                         className="text-red-600 hover:text-red-800"
                         title="Delete Category"
@@ -107,14 +107,14 @@ const CategoryList: React.FC<CategoryListProps> = ({
                     </div>
                   </td>
                 </tr>
-                {expandedCategoryId === category.id && (
+                {expandedCategoryId === category._id && (
                   <tr className="bg-gray-50">
                     <td colSpan={6} className="px-4 sm:px-6 py-4">
                       <div className="border-t border-gray-200 pt-4">
                         <div className="flex flex-col md:flex-row">
                           <div className="md:w-1/4 mb-4 md:mb-0 md:pr-4">
                             <Image
-                              src={category.image}
+                              src={category.image.url}
                               alt={category.name}
                               width={100}
                               height={48}
@@ -163,7 +163,7 @@ const CategoryList: React.FC<CategoryListProps> = ({
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  onDelete(category.id);
+                                  onDelete(category._id);
                                 }}
                                 className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-button text-sm"
                               >
@@ -178,7 +178,7 @@ const CategoryList: React.FC<CategoryListProps> = ({
                           <ul className="list-disc list-inside text-sm text-gray-900">
                             {category.subcategories && category.subcategories.length > 0 ? (
                               category.subcategories.map((sub) => (
-                                <li key={sub.id}>
+                                <li key={sub._id}>
                                   <span className="font-semibold">{sub.name}</span>
                                   {sub.description ? `: ${sub.description}` : ''}
                                 </li>

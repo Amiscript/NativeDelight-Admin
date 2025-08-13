@@ -21,7 +21,7 @@ const CategoryDetails: React.FC<CategoryDetailsProps> = ({
       <div className="flex flex-col md:flex-row">
         <div className="md:w-1/4 mb-4 md:mb-0 md:pr-4">
           <Image 
-            src={category.image} 
+            src={category.image.url} 
             alt={category.name}
             width={100}
             height={48}
@@ -77,7 +77,7 @@ const CategoryDetails: React.FC<CategoryDetailsProps> = ({
         <ul className="list-disc list-inside text-sm text-gray-900">
           {category.subcategories && category.subcategories.length > 0 ? (
             category.subcategories.map(sub => (
-              <li key={sub.id}>
+              <li key={sub._id}>
                 <span className="font-semibold">{sub.name}</span>
                 {sub.description ? `: ${sub.description}` : ''}
               </li>

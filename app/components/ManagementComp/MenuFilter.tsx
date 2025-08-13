@@ -1,7 +1,7 @@
 import React from "react";
 
 interface MenuFiltersProps {
-  categories: string[];
+  categories: { id: string; name: string }[];
   selectedCategory: string;
   setSelectedCategory: (category: string) => void;
   searchTerm: string;
@@ -40,7 +40,7 @@ const MenuFilters: React.FC<MenuFiltersProps> = ({
               onChange={(e) => setSelectedCategory(e.target.value)}
             >
               {categories.map(category => (
-                <option key={category} value={category}>{category}</option>
+                <option key={category.id} value={category.id}>{category.name}</option>
               ))}
             </select>
           </div>

@@ -90,10 +90,10 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Category Image</label>
                     <ImageUploader
-                      imageUrl={currentCategory.image || ''}
-                      onImageChange={(url) => handleChange({ image: url })}
-                      onImageRemove={() => handleChange({ image: '' })}
-                    />
+  imageUrl={currentCategory.image?.url || ''}
+  onImageChange={(url) => handleChange({ image: { url } })}
+  onImageRemove={() => handleChange({ image: { url: '' } })}
+/>
                   </div>
 
                   {/* Status field */}
