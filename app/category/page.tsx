@@ -1,88 +1,38 @@
-// app/page.tsx
+
 "use client";
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import AppLayout from '../components/AppLayout';
 import Header from '../components/Header';
-import CategoryStats from '../components/CategoryComponent.tsx/CategoryStats';
 import CategoryFilters from '../components/CategoryComponent.tsx/CategoryFilters';
 import CategoryGrid from '../components/CategoryComponent.tsx/CategoryGrid';
 import CategoryList from '../components/CategoryComponent.tsx/CategoryList';
 import AddCategoryModal from '../components/CategoryComponent.tsx/Modal/AddCategoryModal';
-import EditCategoryModal from '../components/CategoryComponent.tsx/Modal/EditCategoryModal ';
 import DeleteModal from '../components/CategoryComponent.tsx/Modal/DeleteModal';
-import { Category, ViewMode } from '../components/CategoryComponent.tsx/types';
+import { CategoriesStats, Category, ViewMode, SubCategory, AddNewCategory } from '../components/CategoryComponent.tsx/types';
+import { addcategory, fetchSubcategories, getcategoriesData, updateCategory } from '@/lib/api';
+import CategoryStats from '../components/CategoryComponent.tsx/CategoryStats';
+import EditCategoryModal from '../components/CategoryComponent.tsx/Modal/EditCategoryModal ';
 
 const CategoriesPage: React.FC = () => {
-  // Sample data - in a real app, this would likely come from an API
-  const [categories, setCategories] = useState<Category[]>([
-    {
-      id: 1,
-      name: "Main Dishes",
-      description: "Primary menu items including entrees and main course options.",
-      itemsCount: 24,
-      status: "Active",
-      createdAt: "2025-03-15T10:30:00",
-      image: "https://public.readdy.ai/ai/img_res/30e227ef6bff0f87588204daf02466c2.jpg",
-      subcategories: [
-        { id: 1, name: "Rice Dishes", description: "All rice-based main dishes." },
-        { id: 2, name: "Pasta Dishes", description: "All pasta-based main dishes." }
-      ]
-    },
-    {
-      id: 2,
-      name: "Appetizers",
-      description: "Small dishes served before the main course.",
-      itemsCount: 18,
-      status: "Active",
-      createdAt: "2025-02-10T08:15:00",
-      image: "https://public.readdy.ai/ai/img_res/45c327ef6bff0f87588204daf02466c2.jpg",
-      subcategories: [
-        { id: 3, name: "Cold Appetizers", description: "Chilled starters" },
-        { id: 4, name: "Hot Appetizers", description: "Warm starters" }
-      ]
-    },
-    {
-      id: 3,
-      name: "Desserts",
-      description: "Sweet courses served at the end of a meal.",
-      itemsCount: 15,
-      status: "Active",
-      createdAt: "2025-01-20T14:45:00",
-      image: "https://public.readdy.ai/ai/img_res/60d227ef6bff0f87588204daf02466c2.jpg",
-      subcategories: [
-        { id: 5, name: "Cakes", description: "Baked desserts" },
-        { id: 6, name: "Ice Cream", description: "Frozen desserts" }
-      ]
-    },
-    {
-      id: 4,
-      name: "Beverages",
-      description: "Drinks of all kinds.",
-      itemsCount: 32,
-      status: "Active",
-      createdAt: "2025-03-01T11:20:00",
-      image: "https://public.readdy.ai/ai/img_res/75e127ef6bff0f87588204daf02466c2.jpg",
-      subcategories: [
-        { id: 7, name: "Alcoholic", description: "Contains alcohol" },
-        { id: 8, name: "Non-Alcoholic", description: "No alcohol content" }
-      ]
-    }
-  ]);
-
-  // State management
+  const [categories, setCategories] = useState<Category[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-  const [expandedCategoryId, setExpandedCategoryId] = useState<number | null>(null);
+  const [expandedCategoryId, setExpandedCategoryId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [sortOption, setSortOption] = useState('Name');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [deleteCategoryId, setDeleteCategoryId] = useState<number | null>(null);
+  const [deleteCategoryId, setDeleteCategoryId] = useState<string | null>(null);
+  const [subcategories, setSubcategories] = useState<SubCategory[]>([]);
+  const [categoryStats, setCategoryStats] = useState<CategoriesStats>({
+    totalCategories: 0,
+    totalActiveCategories: 0,
+    mostOrderedCategory: { name: '', totalOrdered: 0, _id: '' },
+  });
 
-  // Helper functions
-  const toggleCategoryDetails = (categoryId: number) => {
+  const toggleCategoryDetails = (categoryId: string) => {
     setExpandedCategoryId(expandedCategoryId === categoryId ? null : categoryId);
   };
 
@@ -95,48 +45,115 @@ const CategoriesPage: React.FC = () => {
     setIsEditModalOpen(true);
   };
 
-  const handleDeleteCategory = (categoryId: number) => {
+  const handleDeleteCategory = (categoryId: string) => {
     setDeleteCategoryId(categoryId);
     setIsDeleteModalOpen(true);
   };
 
   const confirmDeleteCategory = () => {
     if (deleteCategoryId !== null) {
-      setCategories(categories.filter(category => category.id !== deleteCategoryId));
+      setCategories(categories.filter((category) => category._id !== deleteCategoryId));
       setIsDeleteModalOpen(false);
       setDeleteCategoryId(null);
     }
   };
 
-  const handleSaveNewCategory = (newCategory: Omit<Category, 'id' | 'createdAt' | 'itemsCount'>) => {
-    const categoryToAdd: Category = {
-      ...newCategory,
-      id: categories.length ? Math.max(...categories.map(c => c.id)) + 1 : 1,
-      itemsCount: 0,
-      createdAt: new Date().toISOString()
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const [fetchedCategories, subcategoriesData] = await Promise.all([getcategoriesData(), fetchSubcategories()]);
+        setCategories(fetchedCategories.categories || []);
+        setCategoryStats({
+          totalCategories: fetchedCategories.totalCategories || 0,
+          totalActiveCategories: fetchedCategories.totalActiveCategories || 0,
+          mostOrderedCategory: {
+            name: fetchedCategories.mostOrderedCategory?.name || '',
+            totalOrdered: fetchedCategories.mostOrderedCategory?.totalOrdered || 0,
+            _id: fetchedCategories.mostOrderedCategory?._id || '',
+          },
+        });
+        setSubcategories(subcategoriesData);
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      }
     };
-    setCategories([...categories, categoryToAdd]);
-    setIsAddModalOpen(false);
+
+    fetchCategories();
+  }, []);
+
+  console.log("subcategories data", subcategories);
+
+  const handleSaveNewCategory = async (newCategory: Omit<AddNewCategory, '_id' | 'createdAt' | 'itemsCount'>) => {
+    try {
+      const formData = new FormData();
+      formData.append('name', newCategory.name);
+      formData.append('description', newCategory.description);
+      formData.append('status', newCategory.status);
+      if (newCategory.image) {
+        const response = await fetch(newCategory.image);
+        if (!response.ok) throw new Error('Failed to fetch image');
+        const blob = await response.blob();
+        formData.append('image', blob, 'category-image.jpg');
+      }
+      if (newCategory.subcategories?.length) {
+        formData.append('subcategories', JSON.stringify(newCategory.subcategories));
+      }
+
+      // Debug FormData contents
+      for (const [key, value] of formData.entries()) {
+        console.log(`FormData ${key}:`, value);
+      }
+
+      const addedCategory = await addcategory(formData);
+      console.log('API response:', addedCategory);
+      setCategories([...categories, addedCategory]);
+      setIsAddModalOpen(false);
+    } catch (error) {
+      console.error('Error adding category:', error);
+    }
   };
 
-  const handleSaveEditedCategory = (updatedCategory: Category) => {
-    setCategories(categories.map(cat => 
-      cat.id === updatedCategory.id ? updatedCategory : cat
-    ));
-    setIsEditModalOpen(false);
+  const handleSaveEditedCategory = async (updatedCategory: Category) => {
+    try {
+      const formData = new FormData();
+      formData.append('name', updatedCategory.name);
+      formData.append('description', updatedCategory.description);
+      formData.append('status', updatedCategory.status);
+      if (updatedCategory.image.url && updatedCategory.image.url.startsWith('data:')) {
+        const response = await fetch(updatedCategory.image.url);
+        if (!response.ok) throw new Error('Failed to fetch image');
+        const blob = await response.blob();
+        formData.append('image', blob, 'category-image.jpg');
+      }
+      if (updatedCategory.subcategories?.length) {
+        formData.append('subcategories', JSON.stringify(updatedCategory.subcategories));
+      }
+
+      // Debug FormData contents
+      for (const [key, value] of formData.entries()) {
+        console.log(`FormData ${key}:`, value);
+      }
+
+      const updated = await updateCategory({ categoryId: updatedCategory._id, data: formData });
+
+      console.log('API response:', updated);
+      setCategories(categories.map((cat) => (cat._id === updatedCategory._id ? updated : cat)));
+      setIsEditModalOpen(false);
+    } catch (error) {
+      console.error('Error updating category:', error);
+    }
   };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
       month: 'short',
-      day: 'numeric',
+      day: 'numeric',     
       year: 'numeric',
     });
-  };
+  };  
 
-  // Filter and sort categories
-  const filteredCategories = categories.filter(category => {
+  const filteredCategories = categories.filter((category) => {
     const matchesSearch =
       category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       category.description.toLowerCase().includes(searchTerm.toLowerCase());
@@ -154,11 +171,10 @@ const CategoriesPage: React.FC = () => {
     }
   });
 
-  // Statistics calculations
-  const totalCategories = categories.length;
-  const activeCategories = categories.filter(category => category.status === 'Active').length;
-  const mostUsedCategory = [...categories].sort((a, b) => b.itemsCount - a.itemsCount)[0];
-  const unusedCategories = categories.filter(category => category.itemsCount === 0).length;
+  const totalCategories = categoryStats.totalCategories;
+  const activeCategories = categoryStats.totalActiveCategories;
+  const mostUsedCategory = categoryStats.mostOrderedCategory;
+  const emptyCategories = categories.filter((category) => category.itemsCount === 0).length;
 
   const currentDate = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
@@ -170,18 +186,16 @@ const CategoriesPage: React.FC = () => {
   const handleExport = () => {
     const csvRows = [
       ['ID', 'Name', 'Description', 'Items Count', 'Status', 'Created At', 'Image', 'Subcategories'],
-      ...sortedCategories.map(cat =>
-        [
-          cat.id,
-          `"${cat.name.replace(/"/g, '""')}"`,
-          `"${cat.description.replace(/"/g, '""')}"`,
-          cat.itemsCount,
-          cat.status,
-          cat.createdAt,
-          cat.image,
-          cat.subcategories?.map(sub => `${sub.name}: ${sub.description}`).join('; ') || ''
-        ].join(',')
-      ),
+      ...sortedCategories.map((cat) => [
+        cat._id,
+        `"${cat.name.replace(/"/g, '""')}"`,
+        `"${cat.description.replace(/"/g, '""')}"`,
+        cat.itemsCount,
+        cat.status,
+        cat.createdAt,
+        cat.image.url,
+        cat.subcategories?.join('; ') || '',
+      ].join(',')),
     ];
     const csvContent = csvRows.join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -195,12 +209,7 @@ const CategoriesPage: React.FC = () => {
 
   return (
     <AppLayout>
-      <Header
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-        currentDate={currentDate}
-      />
-
+      <Header searchTerm={searchTerm} onSearchChange={setSearchTerm} currentDate={currentDate} />
       <main className="p-4 md:p-6 flex-1 w-full">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
           <h1 className="text-2xl font-bold text-gray-800">Categories Management</h1>
@@ -217,7 +226,7 @@ const CategoriesPage: React.FC = () => {
           totalCategories={totalCategories}
           activeCategories={activeCategories}
           mostUsedCategory={mostUsedCategory}
-          unusedCategories={unusedCategories}
+          unusedCategories={emptyCategories}
         />
 
         <CategoryFilters
@@ -253,12 +262,15 @@ const CategoriesPage: React.FC = () => {
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onSave={handleSaveNewCategory}
+        categories={categories}
+        subcategories={subcategories}
       />
 
       <EditCategoryModal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         category={editingCategory}
+        subcategories={subcategories}
         onSave={handleSaveEditedCategory}
       />
 

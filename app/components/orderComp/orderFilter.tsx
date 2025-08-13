@@ -24,7 +24,7 @@ const OrderFilters: React.FC<OrderFiltersProps> = ({
     const csvRows = [
       ['Order ID', 'Customer', 'Order Time', 'Items', 'Total', 'Status'],
       ...filteredOrders.map(order => [
-        order.id,
+        order._id,
         order.customer,
         formatDateTime(order.time),
         order.items.map(item => `${item.quantity}x ${item.name}`).join('; '),

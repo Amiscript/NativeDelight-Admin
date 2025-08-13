@@ -1,4 +1,4 @@
-// components/SubcategoryManager.tsx
+
 import React, { useState } from 'react';
 import { SubCategory } from './types';
 
@@ -21,7 +21,7 @@ const SubcategoryManager: React.FC<SubcategoryManagerProps> = ({
     const updatedSubcategories = [
       ...subcategories,
       {
-        id: Date.now(),
+        _id: Date.now().toString(), // Use _id and convert to string
         name: newSubcategory.name || '',
         description: newSubcategory.description || '',
       },
@@ -30,12 +30,12 @@ const SubcategoryManager: React.FC<SubcategoryManagerProps> = ({
     setNewSubcategory({ name: '', description: '' });
   };
 
-  const handleDeleteSubcategory = (subId: number) => {
-    onSubcategoriesChange(subcategories.filter((sub) => sub.id !== subId));
+  const handleDeleteSubcategory = (_id: string) => {
+    onSubcategoriesChange(subcategories.filter((sub) => sub._id !== _id));
   };
 
-  const moveSubcategory = (subId: number, direction: 'up' | 'down') => {
-    const idx = subcategories.findIndex((sub) => sub.id === subId);
+  const moveSubcategory = (_id: string, direction: 'up' | 'down') => {
+    const idx = subcategories.findIndex((sub) => sub._id === _id);
     if (idx === -1) return;
     const newSubcategories = [...subcategories];
     if (direction === 'up' && idx > 0) {
@@ -58,14 +58,14 @@ const SubcategoryManager: React.FC<SubcategoryManagerProps> = ({
       <label className="block text-sm font-medium text-gray-700 mb-1">Subcategories</label>
       <div className="space-y-2">
         {subcategories.map((sub, idx, arr) => (
-          <div key={sub.id} className="flex items-center space-x-2">
+          <div key={sub._id} className="flex items-center space-x-2">
             <span className="text-sm font-semibold">{sub.name}</span>
             <span className="text-xs text-gray-500">{sub.description}</span>
             <button
               type="button"
               className="text-gray-500 hover:text-gray-700 text-xs"
               disabled={idx === 0}
-              onClick={() => moveSubcategory(sub.id, 'up')}
+              onClick={() => moveSubcategory(sub._id, 'up')}
               title="Move Up"
             >
               <i className="fas fa-arrow-up"></i>
@@ -74,7 +74,7 @@ const SubcategoryManager: React.FC<SubcategoryManagerProps> = ({
               type="button"
               className="text-gray-500 hover:text-gray-700 text-xs"
               disabled={idx === arr.length - 1}
-              onClick={() => moveSubcategory(sub.id, 'down')}
+              onClick={() => moveSubcategory(sub._id, 'down')}
               title="Move Down"
             >
               <i className="fas fa-arrow-down"></i>
@@ -82,7 +82,7 @@ const SubcategoryManager: React.FC<SubcategoryManagerProps> = ({
             <button
               type="button"
               className="text-red-500 hover:text-red-700 text-xs"
-              onClick={() => handleDeleteSubcategory(sub.id)}
+              onClick={() => handleDeleteSubcategory(sub._id)}
             >
               <i className="fas fa-times"></i>
             </button>

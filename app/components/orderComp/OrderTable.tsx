@@ -21,6 +21,7 @@ const OrderTable: React.FC<OrderTableProps> = ({
   onCancelOrder,
   formatDateTime,
 }) => {
+
   return (
     <div className="bg-white rounded-lg shadow overflow-x-auto">
       <table className="min-w-full divide-y divide-gray-200">
@@ -52,9 +53,9 @@ const OrderTable: React.FC<OrderTableProps> = ({
         <tbody className="bg-white divide-y divide-gray-200">
           {orders.map((order) => (
             <OrderRow
-              key={order.id}
+              key={order._id}
               order={order}
-              isExpanded={expandedOrderId === order.id}
+              isExpanded={expandedOrderId === order._id}
               onToggleDetails={onToggleDetails}
               onStatusUpdate={onStatusUpdate}
               onPrintReceipt={onPrintReceipt}

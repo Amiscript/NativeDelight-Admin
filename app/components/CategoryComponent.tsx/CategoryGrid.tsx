@@ -6,9 +6,10 @@ import { Category } from './types';
 interface CategoryGridProps {
   categories: Category[];
   onEdit: (category: Category) => void;
-  onDelete: (categoryId: number) => void;
-  onToggleDetails: (categoryId: number) => void;
+  onDelete: (categoryId: string) => void;
+  onToggleDetails: (categoryId: string) => void;
 }
+
 
 const CategoryGrid: React.FC<CategoryGridProps> = ({
   categories,
@@ -16,17 +17,18 @@ const CategoryGrid: React.FC<CategoryGridProps> = ({
   onDelete,
   onToggleDetails,
 }) => {
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 mb-6">
       {categories.map((category) => (
         <div
-          key={category.id}
+          key={category._id}
           className="bg-white rounded-lg shadow overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
-          onClick={() => onToggleDetails(category.id)}
+          onClick={() => onToggleDetails(category._id)}
         >
           <div className="h-32 overflow-hidden">
             <Image
-              src={category.image}
+              src={category.image.url}
               alt={category.name}
               width={100}
               height={100}
@@ -38,7 +40,7 @@ const CategoryGrid: React.FC<CategoryGridProps> = ({
               <h3 className="text-lg font-semibold text-gray-800">{category.name}</h3>
               <span
                 className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                  category.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                  category.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
                 }`}
               >
                 {category.status}
@@ -68,7 +70,7 @@ const CategoryGrid: React.FC<CategoryGridProps> = ({
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    onDelete(category.id);
+                    onDelete(category._id);
                   }}
                   className="text-red-600 hover:text-red-800"
                   title="Delete Category"

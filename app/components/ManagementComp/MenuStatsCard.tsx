@@ -4,14 +4,14 @@ interface MenuStatsCardsProps {
   totalItems: number;
   activeItems: number;
   outOfStockItems: number;
-  lowStockItems: number;
+  inStockItems: number;
 }
 
 const MenuStatsCards: React.FC<MenuStatsCardsProps> = ({
   totalItems,
   activeItems,
   outOfStockItems,
-  lowStockItems
+  inStockItems
 }) => {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6">
@@ -47,8 +47,8 @@ const MenuStatsCards: React.FC<MenuStatsCardsProps> = ({
           <i className="fas fa-exclamation-triangle text-yellow-600 text-xl"></i>
         </div>
         <div>
-          <p className="text-gray-500 text-sm">Low Stock</p>
-          <h3 className="text-2xl font-bold">{lowStockItems}</h3>
+          <p className="text-gray-500 text-sm">In Stock</p>
+          <h3 className="text-2xl font-bold">{inStockItems}</h3>
         </div>
       </div>
     </div>

@@ -6,7 +6,7 @@ interface MenuItemTableProps {
   items: MenuItem[];
   onEdit: (item: MenuItem) => void;
   onDelete: (item: MenuItem) => void;
-  onToggleStock: (id: number) => void;
+  onToggleStock: (id: string) => void;
 }
 
 const MenuItemTable: React.FC<MenuItemTableProps> = ({ 
@@ -15,6 +15,8 @@ const MenuItemTable: React.FC<MenuItemTableProps> = ({
   onDelete, 
   onToggleStock 
 }) => {
+
+  console.log(items, "Menu table items");
   return (
     <div className="bg-white rounded-lg shadow overflow-x-auto">
       <table className="min-w-full divide-y divide-gray-200">
@@ -44,26 +46,25 @@ const MenuItemTable: React.FC<MenuItemTableProps> = ({
                   </div>
                   <div className="ml-4">
                     <div className="text-sm font-medium text-gray-900">{item.name}</div>
-                    <div className="text-sm text-gray-500 truncate max-w-xs">{item.description}</div>
                   </div>
                 </div>
               </td>
               <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                <div className="text-sm text-gray-900">{item.category}</div>
+                <div className="text-sm text-gray-900">{item.categoryName}</div>
               </td>
               <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                 <div className="text-sm text-gray-900">{item.subCategory || "—"}</div>
               </td>
               <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                <div className="text-sm text-gray-900">₦{item.price.toFixed(2)}</div>
+                <div className="text-sm text-gray-900">₦{item.price.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
               </td>
               <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                 <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                   item.stock === "In Stock"
-                    ? "bg-green-100 text-green-800"
+                    ? "bg-green-800 text-white"
                     : item.stock === "Low Stock"
-                    ? "bg-yellow-100 text-yellow-800"
-                    : "bg-red-100 text-red-800"
+                    ? "bg-yellow-800 text-white"
+                    : "bg-red-800 text-white"
                 }`}>
                   {item.stock}
                 </span>
@@ -84,10 +85,10 @@ const MenuItemTable: React.FC<MenuItemTableProps> = ({
                     title="Delete"
                   >
                     <span className="text-red-600">Delete</span>
-                    <i className="fas fa-trash-alt"> </i>
+                    <i className="fas fa-trash-alt"> </i>  
                   </button>
                   <button
-                    onClick={() => onToggleStock(item.id)}
+                    onClick={() => item.id && onToggleStock(item.id)}
                     className={`${item.stock === "In Stock" ? "text-green-600 hover:text-green-900" : "text-gray-400 hover:text-gray-600"} cursor-pointer`}
                     title="Toggle Stock"
                   >
