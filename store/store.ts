@@ -12,7 +12,7 @@ import { productApi } from '../store/query/ProductApi';
 import { orderApi } from '../store/query/OrderApi';
 import { categoryApi } from '../store/query/CategoryApi';
 
-// Helper function to safely get initial state
+   
 const getInitialAuthState = () => {
   if (typeof window === 'undefined') {
     return {
