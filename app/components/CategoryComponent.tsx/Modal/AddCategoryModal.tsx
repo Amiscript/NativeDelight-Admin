@@ -1,57 +1,58 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
-import { Category, SubCategory } from '../types';
+import { AddNewCategory, Category, CategoryData, SubCategory } from '../types';
 
 interface AddCategoryModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (category: Omit<Category, 'id' | 'createdAt' | 'itemsCount'>) => void;
+  onSave: (category: Omit<AddNewCategory, '_id' | 'createdAt' | 'itemsCount'>) => void;
+  categories: Category[];
+  subcategories: SubCategory[];
 }
 
-const AddCategoryModal: React.FC<AddCategoryModalProps> = ({ isOpen, onClose, onSave }) => {
-  const [category, setCategory] = useState<Omit<Category, 'id' | 'createdAt' | 'itemsCount'>>({
+const AddCategoryModal: React.FC<AddCategoryModalProps> = ({ isOpen, onClose, onSave, subcategories }) => {
+  const [category, setCategory] = useState<Omit<CategoryData, '_id' | 'createdAt' | 'itemsCount'>>({
     name: '',
     description: '',
-    status: 'Active',
+    status: 'active',
     image: '',
-    subcategories: []
+    subcategories: [],
   });
 
-  const [newSubcategory, setNewSubcategory] = useState<Omit<SubCategory, 'id'>>({
-    name: '',
-    description: ''
-  });
+  const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<string>('');
+  const [imageFile, setImageFile] = useState<File | null>(null);
 
   const handleAddSubcategory = () => {
-    if (!newSubcategory.name) return;
-    
-    const subcategoryWithId = {
-      ...newSubcategory,
-      id: Date.now() // Temporary ID
-    };
-
-    setCategory(prev => ({
+    if (!selectedSubcategoryId) return;
+    const selectedSub = subcategories.find((sub) => sub._id === selectedSubcategoryId);
+    if (!selectedSub) {
+      return;
+    }
+    if (category.subcategories.some((sub) => sub._id === selectedSub._id)) {
+      return;
+    }
+    setCategory((prev) => ({
       ...prev,
-      subcategories: [...prev.subcategories || [], subcategoryWithId]
+      subcategories: [...prev.subcategories, selectedSub],
     }));
-
-    setNewSubcategory({ name: '', description: '' });
+    setSelectedSubcategoryId('');
   };
 
-  const handleRemoveSubcategory = (id: number) => {
-    setCategory(prev => ({
+  const handleRemoveSubcategory = (subcategoryId: string) => {
+    setCategory((prev) => ({
       ...prev,
-      subcategories: prev.subcategories?.filter(sub => sub.id !== id) || []
+      subcategories: prev.subcategories.filter((sub) => sub._id !== subcategoryId),
     }));
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setImageFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
-        setCategory(prev => ({ ...prev, image: reader.result as string }));
+        setCategory((prev) => ({ ...prev, image: reader.result as string }));
       };
       reader.readAsDataURL(file);
     }
@@ -59,7 +60,11 @@ const AddCategoryModal: React.FC<AddCategoryModalProps> = ({ isOpen, onClose, on
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(category);
+    onSave({
+      ...category,
+      subcategories: category.subcategories.map((sub: SubCategory) => sub._id),
+      image: imageFile ? category.image : '',
+    });
     onClose();
   };
 
@@ -77,7 +82,7 @@ const AddCategoryModal: React.FC<AddCategoryModalProps> = ({ isOpen, onClose, on
         <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
           <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
             <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">Add New Category</h3>
-            
+
             <form onSubmit={handleSubmit}>
               <div className="mb-4">
                 <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
@@ -123,7 +128,10 @@ const AddCategoryModal: React.FC<AddCategoryModalProps> = ({ isOpen, onClose, on
                       <button
                         type="button"
                         className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center"
-                        onClick={() => setCategory({ ...category, image: '' })}
+                        onClick={() => {
+                          setCategory({ ...category, image: '' });
+                          setImageFile(null);
+                        }}
                       >
                         ×
                       </button>
@@ -146,10 +154,10 @@ const AddCategoryModal: React.FC<AddCategoryModalProps> = ({ isOpen, onClose, on
                   id="status"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   value={category.status}
-                  onChange={(e) => setCategory({ ...category, status: e.target.value as 'Active' | 'Inactive' })}
+                  onChange={(e) => setCategory({ ...category, status: e.target.value as 'active' | 'inactive' })}
                 >
-                  <option value="Active">Active</option>
-                  <option value="Inactive">Inactive</option>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
                 </select>
               </div>
 
@@ -158,47 +166,52 @@ const AddCategoryModal: React.FC<AddCategoryModalProps> = ({ isOpen, onClose, on
                   Subcategories
                 </label>
                 <div className="space-y-2 mb-2">
-                  {category.subcategories?.map((sub) => (
-                    <div key={sub.id} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                      <div>
-                        <span className="font-medium">{sub.name}</span>
-                        {sub.description && <span className="text-sm text-gray-500 ml-2">- {sub.description}</span>}
-                      </div>
+                  {category.subcategories.map((sub) => (
+                    <div key={sub._id} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                      <span className="font-medium">{sub.name}</span>
                       <button
                         type="button"
                         className="text-red-500 hover:text-red-700"
-                        onClick={() => handleRemoveSubcategory(sub.id)}
+                        onClick={() => handleRemoveSubcategory(sub._id)}
                       >
                         Remove
                       </button>
                     </div>
                   ))}
                 </div>
-                <div className="flex space-x-2">
-                  <input
-                    type="text"
-                    placeholder="Subcategory name"
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    value={newSubcategory.name}
-                    onChange={(e) => setNewSubcategory({ ...newSubcategory, name: e.target.value })}
-                  />
-                  <input
-                    type="text"
-                    placeholder="Description"
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    value={newSubcategory.description}
-                    onChange={(e) => setNewSubcategory({ ...newSubcategory, description: e.target.value })}
-                  />
-                 
-                </div>
+                {subcategories.length === 0 ? (
+                  <p className="text-sm text-gray-500">No subcategories available</p>
+                ) : (
+                  <div className="flex space-x-2">
+                    <select
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      value={selectedSubcategoryId}
+                      onChange={(e) => {
+                        const selectedSub = subcategories.find((sub) => sub._id === e.target.value);
+                        console.log('Selected subcategory:', selectedSub);
+                        setSelectedSubcategoryId(e.target.value);
+                      }}
+                    >
+                      <option value="" disabled>
+                        Select a subcategory
+                      </option>
+                      {subcategories.map((sub) => (
+                        <option key={sub._id} value={sub._id}>
+                          {sub.name}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      className="px-3 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                      onClick={handleAddSubcategory}
+                      disabled={!selectedSubcategoryId}
+                    >
+                      Add
+                    </button>
+                  </div>
+                )}
               </div>
-               <button
-                    type="button"
-                    className="px-3 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                    onClick={handleAddSubcategory}
-                  >
-                    Add
-                  </button>
 
               <div className="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
                 <button

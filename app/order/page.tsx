@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Sidebar from '../components/Sidebar';
 import OrderStats from '../components/orderComp/OrderStats';
 import OrderFilters from '../components/orderComp/orderFilter';
@@ -7,83 +7,9 @@ import OrderTable from '../components/orderComp/OrderTable';
 import StatusUpdatePanel from '../components/orderComp/StatusUapdate';
 import CancelOrderModal from '../components/orderComp/CancelOrderModal';
 import { Order, DateRange} from '../components/orderComp/types';
+import { getOrderHistory } from '@/lib/api';
 
 const OrdersPage: React.FC = () => {
-  const [orders, setOrders] = useState<Order[]>([
-    {
-      id: "ORD-2504",
-      customer: "John Smith",
-      time: "2025-04-03T09:15:00",
-      items: [
-        { name: "Classic Cheeseburger", quantity: 2, price: 12.99 },
-        { name: "French Fries", quantity: 1, price: 4.99 },
-        { name: "Chocolate Milkshake", quantity: 1, price: 5.99 }
-      ],
-      total: 36.96,
-      status: "Pending"
-    },
-    {
-      id: "ORD-2503",
-      customer: "Emma Johnson",
-      time: "2025-04-03T08:45:00",
-      items: [
-        { name: "Margherita Pizza", quantity: 1, price: 14.99 },
-        { name: "Caesar Salad", quantity: 1, price: 9.99 },
-        { name: "Iced Tea", quantity: 2, price: 2.99 }
-      ],
-      total: 30.96,
-      status: "Preparing"
-    },
-    {
-      id: "ORD-2502",
-      customer: "Michael Brown",
-      time: "2025-04-03T08:20:00",
-      items: [
-        { name: "Chicken Alfredo", quantity: 1, price: 15.99 },
-        { name: "Garlic Bread", quantity: 1, price: 3.99 },
-        { name: "Tiramisu", quantity: 1, price: 7.99 }
-      ],
-      total: 27.97,
-      status: "Ready"
-    },
-    {
-      id: "ORD-2501",
-      customer: "Sarah Wilson",
-      time: "2025-04-03T07:50:00",
-      items: [
-        { name: "Vegetarian Wrap", quantity: 1, price: 10.99 },
-        { name: "Sweet Potato Fries", quantity: 1, price: 5.99 },
-        { name: "Lemonade", quantity: 1, price: 3.49 }
-      ],
-      total: 20.47,
-      status: "Delivered"
-    },
-    {
-      id: "ORD-2500",
-      customer: "David Lee",
-      time: "2025-04-02T19:30:00",
-      items: [
-        { name: "BBQ Burger", quantity: 1, price: 13.99 },
-        { name: "Onion Rings", quantity: 1, price: 4.99 },
-        { name: "Chocolate Brownie", quantity: 1, price: 6.99 }
-      ],
-      total: 25.97,
-      status: "Delivered"
-    },
-    {
-      id: "ORD-2499",
-      customer: "Lisa Garcia",
-      time: "2025-04-02T19:15:00",
-      items: [
-        { name: "Pepperoni Pizza", quantity: 1, price: 16.99 },
-        { name: "Buffalo Wings", quantity: 1, price: 11.99 },
-        { name: "Soda", quantity: 2, price: 2.49 }
-      ],
-      total: 33.96,
-      status: "Delivered"
-    }
-  ]);
-
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [dateRange, setDateRange] = useState<DateRange>({ start: '', end: '' });
@@ -92,6 +18,43 @@ const OrdersPage: React.FC = () => {
   const [currentEditOrder, setCurrentEditOrder] = useState<Order | null>(null);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [cancelOrderId, setCancelOrderId] = useState<string | null>(null);
+
+    const [orders, setOrders] = useState<Order[]>([]);
+  const [error, setError] = useState<any | null>(null);
+  const [orderStats, seetOrderStats] = useState({
+    totalOrders: 0,
+    pendingOrders: 0,
+    completedOrders: 0,
+    cancelledOrders: 0,
+    processingOrders: 0,
+  });
+
+  useEffect(() => {
+    try {
+      const fetchOrderHistory = async () => {
+        const response = await getOrderHistory();
+        if (response && response.data) {
+          console.log(response.data, "data");
+          setOrders(response.data?.orders || []);
+          seetOrderStats({
+            totalOrders: response.data.pagination.totalOrders,
+            pendingOrders: response.data.pagination?.pendingOrders || 0,
+            cancelledOrders: response.data.pagination?.cancelledOrders || 0,
+            completedOrders: response.data?.pagination?.completedOrders || 0,
+            processingOrders: response.data?.pagination?.processingOrders || 0,
+          })
+        }
+      };
+      fetchOrderHistory();
+    } catch (error) {
+      setError(error)
+    }
+  }, [])
+
+  console.log("order data details", orders)
+
+  console.log(error)
+
 
   const toggleOrderDetails = (orderId: string) => {
     setExpandedOrderId(expandedOrderId === orderId ? null : orderId);
@@ -104,7 +67,7 @@ const OrdersPage: React.FC = () => {
 
   const handleSaveStatus = (updatedOrder: Order) => {
     setOrders(orders.map(order =>
-      order.id === updatedOrder.id ? updatedOrder : order
+      order._id === updatedOrder._id ? updatedOrder : order
     ));
     setIsQuickEditOpen(false);
     setCurrentEditOrder(null);
@@ -122,7 +85,7 @@ const OrdersPage: React.FC = () => {
   const confirmCancelOrder = () => {
     if (cancelOrderId) {
       setOrders(orders.map(order =>
-        order.id === cancelOrderId ? { ...order, status: "Cancelled" } : order
+        order._id === cancelOrderId ? { ...order, status: "Cancelled" } : order
       ));
       setIsCancelModalOpen(false);
       setCancelOrderId(null);
@@ -131,8 +94,8 @@ const OrdersPage: React.FC = () => {
 
   const filteredOrders = orders.filter(order => {
     const matchesSearch =
-      order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.customer.toLowerCase().includes(searchTerm.toLowerCase());
+      order.phone.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'All' || order.status === statusFilter;
     let matchesDate = true;
     if (dateRange.start && dateRange.end) {
@@ -142,10 +105,10 @@ const OrdersPage: React.FC = () => {
     return matchesSearch && matchesStatus && matchesDate;
   });
 
-  const totalOrders = orders.length;
-  const pendingOrders = orders.filter(order => order.status === 'Pending').length;
-  const preparingOrders = orders.filter(order => order.status === 'Preparing').length;
-  const deliveredOrders = orders.filter(order => order.status === 'Delivered').length;
+  // const totalOrders = orders.length;
+  // const pendingOrders = orders.filter(order => order.status === 'Pending').length;
+  // const preparingOrders = orders.filter(order => order.status === 'Preparing').length;
+  // const deliveredOrders = orders.filter(order => order.status === 'Delivered').length;
 
   const currentDate = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
@@ -197,10 +160,12 @@ const OrdersPage: React.FC = () => {
           </div>
 
           <OrderStats 
-            totalOrders={totalOrders}
-            pendingOrders={pendingOrders}
-            preparingOrders={preparingOrders}
-            deliveredOrders={deliveredOrders}
+            totalOrders={orderStats.totalOrders}
+            pendingOrders={orderStats.pendingOrders}
+            preparingOrders={orderStats.completedOrders}
+            deliveredOrders={orderStats.completedOrders}
+            cancelledOrders={orderStats.cancelledOrders}
+            processingOrders={orderStats.processingOrders}
           />
 
           <OrderFilters

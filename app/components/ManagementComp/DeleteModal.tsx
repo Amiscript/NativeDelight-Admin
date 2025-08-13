@@ -1,5 +1,5 @@
 import React from "react";
-import { MenuItem } from "../ManagementComp/types";
+import { MenuItem } from "./types";
 
 interface DeleteConfirmationModalProps {
   isOpen: boolean;
@@ -16,6 +16,7 @@ const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({
 }) => {
   if (!isOpen || !item) return null;
 
+  console.log(item, "items  data")
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
       <div className="bg-white rounded-lg shadow-lg w-full max-w-sm p-6 relative">

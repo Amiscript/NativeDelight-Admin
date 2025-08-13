@@ -5,6 +5,8 @@ interface OrderStatsProps {
   pendingOrders: number;
   preparingOrders: number;
   deliveredOrders: number;
+  cancelledOrders: number;
+  processingOrders: number;
 }
 
 const OrderStats: React.FC<OrderStatsProps> = ({
@@ -12,50 +14,66 @@ const OrderStats: React.FC<OrderStatsProps> = ({
   pendingOrders,
   preparingOrders,
   deliveredOrders,
+  cancelledOrders,
+  processingOrders,
 }) => {
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6">
-      {/* Total Orders */}
-      <div className="bg-white rounded-lg shadow p-4 flex items-center">
-        <div className="rounded-full bg-blue-100 p-3 mr-4">
-          <i className="fas fa-shopping-cart text-blue-600 text-xl"></i>
+
+ return (
+    <div className="px-4 sm:px-6 lg:px-8 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+        {/* Total Orders */}
+        <div className="bg-white rounded-lg shadow p-4 flex items-center min-w-0">
+          <div className="rounded-full bg-blue-100 p-3 mr-4 flex-shrink-0">
+            <i className="fas fa-shopping-cart text-blue-600 text-xl"></i>
+          </div>
+          <div className="truncate">
+            <p className="text-gray-500 text-sm">Total Orders</p>
+            <h3 className="text-xl font-bold truncate">{totalOrders}</h3> 
+          </div>
         </div>
-        <div>
-          <p className="text-gray-500 text-sm">Total Orders</p>
-          <h3 className="text-2xl font-bold">{totalOrders}</h3>
+
+        {/* Pending Orders */}
+        <div className="bg-white rounded-lg shadow p-4 flex items-center min-w-0">
+          <div className="rounded-full bg-yellow-100 p-3 mr-4 flex-shrink-0">
+            <i className="fas fa-clock text-yellow-600 text-xl"></i>
+          </div>
+          <div className="truncate">
+            <p className="text-gray-500 text-sm">Pending Orders</p>
+            <h3 className="text-xl font-bold truncate">{pendingOrders}</h3>
+          </div>
         </div>
-      </div>
-      
-      {/* Pending Orders */}
-      <div className="bg-white rounded-lg shadow p-4 flex items-center">
-        <div className="rounded-full bg-yellow-100 p-3 mr-4">
-          <i className="fas fa-clock text-yellow-600 text-xl"></i>
+
+        {/* Processing Orders */}
+        <div className="bg-white rounded-lg shadow p-4 flex items-center min-w-0">
+          <div className="rounded-full bg-orange-100 p-3 mr-4 flex-shrink-0">
+            <i className="fas fa-fire text-orange-600 text-xl"></i>
+          </div>
+          <div className="truncate">
+            <p className="text-gray-500 text-sm">Processing Orders</p>
+            <h3 className="text-xl font-bold truncate">{processingOrders}</h3>
+          </div>
         </div>
-        <div>
-          <p className="text-gray-500 text-sm">Pending Orders</p>
-          <h3 className="text-2xl font-bold">{pendingOrders}</h3>
+
+        {/* Delivered Orders */}
+        <div className="bg-white rounded-lg shadow p-4 flex items-center min-w-0">
+          <div className="rounded-full bg-green-100 p-3 mr-4 flex-shrink-0">
+            <i className="fas fa-check-circle text-green-600 text-xl"></i>
+          </div>
+          <div className="truncate">
+            <p className="text-gray-500 text-sm">Delivered Orders</p>
+            <h3 className="text-xl font-bold truncate">{deliveredOrders}</h3>
+          </div>
         </div>
-      </div>
-      
-      {/* Preparing Orders */}
-      <div className="bg-white rounded-lg shadow p-4 flex items-center">
-        <div className="rounded-full bg-orange-100 p-3 mr-4">
-          <i className="fas fa-fire text-orange-600 text-xl"></i>
-        </div>
-        <div>
-          <p className="text-gray-500 text-sm">In Preparation</p>
-          <h3 className="text-2xl font-bold">{preparingOrders}</h3>
-        </div>
-      </div>
-      
-      {/* Delivered Orders */}
-      <div className="bg-white rounded-lg shadow p-4 flex items-center">
-        <div className="rounded-full bg-green-100 p-3 mr-4">
-          <i className="fas fa-check-circle text-green-600 text-xl"></i>
-        </div>
-        <div>
-          <p className="text-gray-500 text-sm">Delivered Orders</p>
-          <h3 className="text-2xl font-bold">{deliveredOrders}</h3>
+
+        {/* Cancelled Orders */}
+        <div className="bg-white rounded-lg shadow p-4 flex items-center min-w-0">
+          <div className="rounded-full bg-red-100 p-3 mr-4 flex-shrink-0">
+            <i className="fas fa-times-circle text-red-600 text-xl"></i>
+          </div>
+          <div className="truncate">
+            <p className="text-gray-500 text-sm">Cancelled Orders</p>
+            <h3 className="text-xl font-bold truncate">{cancelledOrders}</h3>
+          </div>
         </div>
       </div>
     </div>

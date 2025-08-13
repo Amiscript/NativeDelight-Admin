@@ -6,7 +6,7 @@ interface SubcategoryManagerProps {
   subCategories: SubCategory[];
   selectedSubCategory: string;
   onSelect: (subCategory: string) => void;
-  onMove: (subId: number, direction: 'up' | 'down') => void;
+  onMove: (subId: string, direction: 'up' | 'down') => void;
 }
 
 const SubcategoryManager: React.FC<SubcategoryManagerProps> = ({
