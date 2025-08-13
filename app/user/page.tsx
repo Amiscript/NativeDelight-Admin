@@ -1,14 +1,20 @@
 'use client';
 import React, { useState } from 'react';
 import { useGetUsersQuery, useAddUserMutation, useUpdateUserMutation, useDeleteUserMutation } from '../../store/query/AuthApi';
-import { format } from 'date-fns';
+// import { format } from 'date-fns';
 import Image from 'next/image';
-import { Users, UserCheck, UserMinus, Shield, Plus, Edit, Trash, Ban } from 'lucide-react';
+import { Users, UserCheck, UserMinus, Plus,Shield } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { ApiError } from '../../store/query/AuthApi';
+import DeleteUserModal from '../components/usercomponents/DeleteUserModal';
+import UserTable from '../components/usercomponents/UserTable';
 
-type Role = 'admin' | 'manager' | 'staff';
+
+
+type Role =   'admin'| 'manager' | 'staff';
 type Status = 'active' | 'inactive';
-
 
 interface User {
   id: string;
@@ -21,14 +27,17 @@ interface User {
 }
 
 function UserManagementPage() {
-  // Data fetching
-  const { data: apiResponse, isLoading, error } = useGetUsersQuery();
-const users: User[] = apiResponse?.data || apiResponse?.users || [];
-  const [addUser] = useAddUserMutation();
-  const [updateUser] = useUpdateUserMutation();
-  const [deleteUser] = useDeleteUserMutation();
+  const { data: apiResponse, isLoading, refetch } = useGetUsersQuery({
+  page: 1, 
+  limit: 10
+});
 
-  
+  const users: User[] = apiResponse?.data || apiResponse?.users || [];
+
+  console.log(users)
+  const [addUser, { isLoading: isAdding }] = useAddUserMutation();
+  const [updateUser, { isLoading: isUpdating }] = useUpdateUserMutation();
+  const [deleteUser, { isLoading: isDeleting }] = useDeleteUserMutation();
 
   const [selectedRole, setSelectedRole] = useState<Role | 'all'>('all');
   const [selectedStatus, setSelectedStatus] = useState<Status | 'all'>('all');
@@ -72,121 +81,180 @@ const users: User[] = apiResponse?.data || apiResponse?.users || [];
   ];
 
   // Handlers
-  const handleAddUser = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      await addUser({
-        name: addUserData.name,
-        email: addUserData.email,
-        role: addUserData.role,
-        status: addUserData.status,
-        avatarFile: addUserData.avatarFile || undefined,
-        password: generateRandomPassword()
-      }).unwrap();
-      
-      setIsAddModalOpen(false);
-      setAddUserData({
-        name: '',
-        email: '',
-        role: 'staff',
-        status: 'active',
-        avatar: '',
-        avatarFile: null
-      });
-    } catch (error) {
-      console.log('Failed to add user:', error);
+const handleAddUser = async (e: React.FormEvent) => {
+  e.preventDefault();
+  
+  try {
+    const formData = new FormData();
+    formData.append('name', addUserData.name);
+    formData.append('email', addUserData.email);
+    formData.append('role', addUserData.role);
+    formData.append('status', addUserData.status);
+    
+    if (addUserData.avatarFile) {
+      formData.append('avatar', addUserData.avatarFile);
     }
-  };
 
-  const handleEditUser = (user: User) => {
-    setSelectedUser(user);
-    setEditUserData({
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      status: user.status,
-      avatar: user.avatar || '',
+    await toast.promise(
+      addUser(formData).unwrap(),
+      {
+        pending: 'Creating user account...',
+        success: {
+          render({ data }) {
+            setIsAddModalOpen(false);
+            return data?.message || 'User added successfully';
+          }
+        },
+        error: {
+          render({ data }) {
+            if (isApiError(data)) {
+              if (data.status === 409) return 'Email already exists';
+              if (data.status === 413) return 'Image is too large (max 2MB)';
+              if (data.data?.errors?.email) return data.data.errors.email[0];
+              if (data.data?.errors?.name) return data.data.errors.name[0];
+              return data.data?.message || 'Failed to add user';
+            }
+            return 'Network error. Please try again.';
+          }
+        }
+      }
+    );
+
+    // Reset form
+    setAddUserData({
+      name: '',
+      email: '',
+      role: 'staff',
+      status: 'active',
+      avatar: '',
       avatarFile: null
     });
-    setIsQuickEditOpen(true);
-  };
-
-  const handleUpdateUser = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedUser) return;
     
-    try {
-      await updateUser({
-        id: selectedUser.id,
-        data: {
-          name: editUserData.name,
-          email: editUserData.email,
-          role: editUserData.role,
-          status: editUserData.status,
-          avatarFile: editUserData.avatarFile || undefined
-        }
-      }).unwrap();
-      
-      setIsQuickEditOpen(false);
-      setSelectedUser(null);
-    } catch (error) {
-      console.error('Failed to update user:', error);
+    await refetch();
+
+  } catch (error) {
+    if (isApiError(error)) {
+      if (error.status === 401) {
+        toast.error('Unauthorized: Please login again');
+      } else if (error.data?.errors) {
+        Object.entries(error.data.errors).forEach(([field, messages]) => {
+          toast.error(`${field}: ${(messages as string[]).join(', ')}`);
+        });
+      } else {
+        toast.error(error.data?.message || 'Failed to process request');
+      }
+    } else {
+      console.error('Unexpected error:', error);
+      toast.error('An unexpected error occurred');
     }
-  };
+  }
+};
+function isApiError(error: unknown): error is ApiError {
+  return typeof error === 'object' && error !== null && 'data' in error;
+}
+const handleUpdateUser = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!selectedUser) return;
+  
+  try {
+    const response = await updateUser({
+      id: selectedUser.id,
+      data: {
+        name: editUserData.name,
+        email: editUserData.email,
+        role: editUserData.role,
+        status: editUserData.status,
+        avatarFile: editUserData.avatarFile || undefined
+      }
+    }).unwrap();
+
+    toast.success(response.message || 'User updated successfully');
+    setIsQuickEditOpen(false);
+    setSelectedUser(null);
+    refetch();
+  } catch (error) {
+    if (isApiError(error)) {
+      toast.error(error.data?.message || 'Failed to update user');
+    }
+  } 
+};
 
   const handleDeleteUser = async () => {
-    if (!deleteUserId) return;
-    
-    try {
-      await deleteUser(deleteUserId).unwrap();
-      setIsDeleteModalOpen(false);
-      setDeleteUserId(null);
-    } catch (error) {
-      console.error('Failed to delete user:', error);
+  if (!deleteUserId) return;
+  
+  try {
+    console.log("Attempting to delete user with ID:", deleteUserId); // Add this
+    const response = await deleteUser(deleteUserId).unwrap();
+    console.log("Delete response:", response); // Add this
+    toast.success(response.message || 'User deleted successfully');
+    setIsDeleteModalOpen(false);
+    setDeleteUserId(null);
+    refetch();
+  } catch (error) {
+    console.error("Delete error:", error); // Add this
+    if (isApiError(error)) {
+      toast.error(error.data?.message || 'Failed to delete user');
+    } else {
+      toast.error('An unexpected error occurred');
     }
-  };
+  }
+};
 
   const handleStatusChange = async (userId: string, status: Status) => {
     try {
-      await updateUser({
+      const response = await updateUser({
         id: userId,
         data: { status }
       }).unwrap();
+      toast.success(response.message || 'Status updated successfully');
+      refetch();
     } catch (error) {
-      console.error('Failed to change user status:', error);
+      if (isApiError(error)) {
+      toast.error(error.data?.message || 'Failed to change user status');
+    }
     }
   };
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>, isEdit: boolean = false) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      const reader = new FileReader();
-      
-      reader.onload = (event) => {
-        if (isEdit) {
-          setEditUserData(prev => ({
-            ...prev,
-            avatar: event.target?.result as string,
-            avatarFile: file
-          }));
-        } else {
-          setAddUserData(prev => ({
-            ...prev,
-            avatar: event.target?.result as string,
-            avatarFile: file
-          }));
-        }
-      };
-      
-      reader.readAsDataURL(file);
-    }
+  if (!e.target.files || e.target.files.length === 0) return;
+
+  const file = e.target.files[0];
+  const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+  const maxSize = 2 * 1024 * 1024; // 2MB
+
+  // Validate file type
+  if (!validTypes.includes(file.type)) {
+    toast.error('Please upload a JPG, PNG, or WEBP image');
+    return;
+  }
+
+  // Validate file size
+  if (file.size > maxSize) {
+    toast.error('Image size must be less than 2MB');
+    return;
+  }
+
+  const reader = new FileReader();
+  
+  reader.onload = (event) => {
+    const updateState = isEdit ? setEditUserData : setAddUserData;
+    updateState(prev => ({
+      ...prev,
+      avatar: event.target?.result as string,
+      avatarFile: file // Store the actual File object for upload
+    }));
   };
 
-  const generateRandomPassword = () => Math.random().toString(36).slice(-8);
+  reader.onerror = () => {
+    toast.error('Error reading image file');
+  };
+
+  reader.readAsDataURL(file);
+};
+ 
 
   if (isLoading) return <div className="flex justify-center items-center h-screen">Loading...</div>;
-  if (error) return <div className="flex justify-center items-center h-screen text-red-500">Error loading users</div>
-
+  // if (error) return <div className="flex justify-center items-center h-screen text-red-500">Error loading users</div>
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row">
       <Sidebar activePath="/user" />
@@ -241,147 +309,42 @@ const users: User[] = apiResponse?.data || apiResponse?.users || [];
               </select>
             </div>
             <div className="flex items-center space-x-4">
-              {/* <button className="flex items-center space-x-2 px-4 py-2 border rounded-lg text-gray-600 hover:bg-gray-50">
-                <Download className="h-5 w-5" />
-                <span>Export</span>
-              </button> */}
               <button
-                className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-400"
                 onClick={() => setIsAddModalOpen(true)}
+                disabled={isAdding}
               >
-                <Plus className="h-5 w-5" />
-                <span>Add User</span>
+                {isAdding ? (
+                  <span className="flex items-center">
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Adding...
+                  </span>
+                ) : (
+                  <>
+                    <Plus className="h-5 w-5" />
+                    <span>Add User</span>
+                  </>
+                )}
               </button>
             </div>
           </div>
         </div>
 
         {/* User Table */}
-        <div className="bg-white rounded-lg shadow overflow-x-auto">
-          <table className="min-w-full">
-            <thead>
-              <tr className="bg-gray-50 border-b">
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Login</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-  {filteredUsers.map((user, index) => {
-
-    // Create a guaranteed unique key
-    const uniqueKey = user.id 
-      ? `user-${user.id}`
-      : `user-${user.email}-${index}`; // Fallback using email + index
-    
-    // Generate initials for avatar fallback
-    const initials = user.name
-      ? user.name.split(' ').map(n => n[0]).join('').toUpperCase()
-      : 'US'; // Default initials
-
-    return (
-      <tr key={uniqueKey} className="hover:bg-gray-50">
-        {/* Avatar and Name Cell */}
-        <td className="px-6 py-4 whitespace-nowrap">
-          <div className="flex items-center">
-            {user.avatar ? (
-              <Image 
-                className="h-10 w-10 rounded-full" 
-                src={user.avatar}
-                alt={user.name || 'User avatar'}
-                width={40}
-                height={40}
-              />
-            ) : (
-              <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-                <span className="text-gray-600 font-medium">
-                  {initials}
-                </span>
-              </div>
-            )}
-            <div className="ml-4">
-              <div className="text-sm font-medium text-gray-900">
-                {user.name || 'Unknown User'}
-              </div>
-              <div className="text-sm text-gray-500">
-                {user.email || 'No email provided'}
-              </div>
-            </div>
-          </div>
-        </td>
-
-        {/* Role Cell */}
-        <td className="px-6 py-4 whitespace-nowrap">
-          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-            user.role === 'admin' ? 'bg-purple-100 text-purple-800' :
-            user.role === 'manager' ? 'bg-blue-100 text-blue-800' :
-            'bg-gray-100 text-gray-800'
-          }`}>
-            {user.role || 'N/A'}
-          </span>
-        </td>
-
-        {/* Status Cell */}
-        <td className="px-6 py-4 whitespace-nowrap">
-          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-            user.status === 'active' ? 'bg-green-100 text-green-800' : 
-            'bg-red-100 text-red-800'
-          }`}>
-            {user.status || 'N/A'}
-          </span>
-        </td>
-
-        {/* Last Login Cell */}
-        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-          {user.lastLogin 
-            ? format(new Date(user.lastLogin), 'MMM d, yyyy HH:mm') 
-            : 'Never logged in'}
-        </td>
-
-        {/* Actions Cell */}
-        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-          <div className="flex items-center justify-end space-x-3">
-            <button
-              onClick={() => handleEditUser(user)}
-              className="text-blue-600 hover:text-blue-900"
-              aria-label={`Edit ${user.name || 'user'}`}
-            >
-              <Edit className="h-5 w-5" />
-            </button>
-            <button 
-              className="text-yellow-600 hover:text-yellow-900"
-              onClick={() => handleStatusChange(
-                user.id || '', 
-                user.status === 'active' ? 'inactive' : 'active'
-              )}
-              aria-label={`Toggle status for ${user.name || 'user'}`}
-              disabled={!user.id}
-            >
-              <Ban className="h-5 w-5" />
-            </button>
-            <button
-              className="text-red-600 hover:text-red-900"
-              onClick={() => {
-                if (user.id) {
-                  setDeleteUserId(user.id);
-                  setIsDeleteModalOpen(true);
-                }
-              }}
-              aria-label={`Delete ${user.name || 'user'}`}
-              disabled={!user.id}
-            >
-              <Trash className="h-5 w-5" />
-            </button>
-          </div>
-        </td>
-      </tr>
-    );
-  })}
-</tbody>
-          </table>
-        </div>
+              <UserTable
+        users={filteredUsers}
+        onStatusChange={handleStatusChange}
+        onDeleteClick={(userId) => {
+          setDeleteUserId(userId);
+          setIsDeleteModalOpen(true);
+        }}
+        isUpdating={isUpdating}
+        isDeleting={isDeleting}
+      />
+        {/* < */}
 
         {/* Add User Modal */}
         {isAddModalOpen && (
@@ -390,6 +353,7 @@ const users: User[] = apiResponse?.data || apiResponse?.users || [];
               <button
                 className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
                 onClick={() => setIsAddModalOpen(false)}
+                disabled={isAdding}
               >
                 <span className="sr-only">Close</span>
                 <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -444,7 +408,7 @@ const users: User[] = apiResponse?.data || apiResponse?.users || [];
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Avatar</label>
+                  <label className="block text-sm font-medium text-gray-700">Avatar (Optional)</label>
                   <input
                     type="file"
                     accept="image/*"
@@ -473,14 +437,24 @@ const users: User[] = apiResponse?.data || apiResponse?.users || [];
                     type="button"
                     className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-md"
                     onClick={() => setIsAddModalOpen(false)}
+                    disabled={isAdding}
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md disabled:bg-blue-400"
+                    disabled={isAdding}
                   >
-                    Add User
+                    {isAdding ? (
+                      <span className="flex items-center">
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Adding...
+                      </span>
+                    ) : 'Add User'}
                   </button>
                 </div>
               </form>
@@ -489,45 +463,18 @@ const users: User[] = apiResponse?.data || apiResponse?.users || [];
         )}
 
         {/* Delete Modal */}
-        {isDeleteModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-            <div className="bg-white rounded-lg shadow-lg w-full max-w-sm p-6 relative">
-              <button
-                className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
-                onClick={() => setIsDeleteModalOpen(false)}
-              >
-                <span className="sr-only">Close</span>
-                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-              <h2 className="text-lg font-semibold mb-4 text-center">Delete User</h2>
-              <p className="mb-6 text-center text-gray-700">
-                Are you sure you want to delete this user? This action cannot be undone.
-              </p>
-              <div className="flex flex-col sm:flex-row justify-end gap-2">
-                <button
-                  className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-md"
-                  onClick={() => setIsDeleteModalOpen(false)}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md"
-                  onClick={handleDeleteUser}
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
+          <DeleteUserModal
+          isOpen={isDeleteModalOpen}
+          onClose={() => setIsDeleteModalOpen(false)}
+          onConfirm={handleDeleteUser}
+          isLoading={isDeleting}
+        />
+       
         {/* Quick Edit Panel */}
         {isQuickEditOpen && selectedUser && (
           <div className="fixed inset-0 overflow-hidden z-50">
             <div className="absolute inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
-              onClick={() => setIsQuickEditOpen(false)} />
+              onClick={() => !isUpdating && setIsQuickEditOpen(false)} />
             <div className="fixed inset-y-0 right-0 pl-10 max-w-full flex">
               <div className="relative w-screen max-w-md">
                 <div className="h-full flex flex-col bg-white shadow-xl">
@@ -537,7 +484,8 @@ const users: User[] = apiResponse?.data || apiResponse?.users || [];
                       <button
                         type="button"
                         className="text-gray-400 hover:text-gray-500"
-                        onClick={() => setIsQuickEditOpen(false)}
+                        onClick={() => !isUpdating && setIsQuickEditOpen(false)}
+                        disabled={isUpdating}
                       >
                         <span className="sr-only">Close panel</span>
                         <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -563,10 +511,11 @@ const users: User[] = apiResponse?.data || apiResponse?.users || [];
                               className="ml-5 hidden"
                               id="edit-avatar-upload"
                               onChange={(e) => handleAvatarChange(e, true)}
+                              disabled={isUpdating}
                             />
                             <label
                               htmlFor="edit-avatar-upload"
-                              className="ml-5 bg-white py-2 px-3 border border-gray-300 rounded-md shadow-sm text-sm leading-4 font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 cursor-pointer"
+                              className={`ml-5 bg-white py-2 px-3 border border-gray-300 rounded-md shadow-sm text-sm leading-4 font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${isUpdating ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                             >
                               Change
                             </label>
@@ -579,6 +528,7 @@ const users: User[] = apiResponse?.data || apiResponse?.users || [];
                             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                             value={editUserData.name}
                             onChange={e => setEditUserData({...editUserData, name: e.target.value})}
+                            disabled={isUpdating}
                           />
                         </div>
                         <div>
@@ -588,6 +538,7 @@ const users: User[] = apiResponse?.data || apiResponse?.users || [];
                             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                             value={editUserData.email}
                             onChange={e => setEditUserData({...editUserData, email: e.target.value})}
+                            disabled={isUpdating}
                           />
                         </div>
                         <div>
@@ -596,6 +547,7 @@ const users: User[] = apiResponse?.data || apiResponse?.users || [];
                             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                             value={editUserData.role}
                             onChange={e => setEditUserData({...editUserData, role: e.target.value as Role})}
+                            disabled={isUpdating}
                           >
                             <option value="admin">Admin</option>
                             <option value="manager">Manager</option>
@@ -608,6 +560,7 @@ const users: User[] = apiResponse?.data || apiResponse?.users || [];
                             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                             value={editUserData.status}
                             onChange={e => setEditUserData({...editUserData, status: e.target.value as Status})}
+                            disabled={isUpdating}
                           >
                             <option value="active">Active</option>
                             <option value="inactive">Inactive</option>
@@ -619,17 +572,27 @@ const users: User[] = apiResponse?.data || apiResponse?.users || [];
                   <div className="flex-shrink-0 px-4 py-4 flex justify-end space-x-2">
                     <button
                       type="button"
-                      className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                      className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
                       onClick={() => setIsQuickEditOpen(false)}
+                      disabled={isUpdating}
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
-                      className="bg-blue-600 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                      className="bg-blue-600 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-400"
                       onClick={handleUpdateUser}
+                      disabled={isUpdating}
                     >
-                      Save Changes
+                      {isUpdating ? (
+                        <span className="flex items-center">
+                          <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Saving...
+                        </span>
+                      ) : 'Save Changes'}
                     </button>
                   </div>
                 </div>
@@ -641,5 +604,5 @@ const users: User[] = apiResponse?.data || apiResponse?.users || [];
     </div>
   );
 }
-
+  
 export default UserManagementPage;

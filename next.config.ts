@@ -12,6 +12,9 @@ const nextConfig: NextConfig = {
        
       }
     ],
+
+    loader: 'cloudinary',
+    path: 'https://res.cloudinary.com/your-cloud-name/image/upload',
   },
 }
 

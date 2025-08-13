@@ -6,31 +6,69 @@ interface User {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'manager' | 'staff';
+  role:  'manager' | 'staff';
   status: 'active' | 'inactive';
   avatar?: string;
   lastLogin?: string;
  
 }
+
+ export interface ApiError {
+  status: number;
+  data?: {
+    message?: string;
+    errors?: Record<string, string[]>;
+  };
+}
+
+
+
+
+interface UserResponse {
+  user: User;
+  message: string;
+}
+
+
+
 interface UsersResponse {
   data: User[];
+  
   users: User[];
   count: number;
+   pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalNonAdminUsers: number;
+    limit: number;
+  };
+  stats: {
+    totalUsers: number;
+    totalAdmins: number;
+    totalActiveUsers: number;
+    totalInactiveUsers: number;
+  };
+}
+
+interface ChangePasswordRequest {
+  password: string;
 }
 
 
 interface LoginResponse {
   token: string;
   user: User;
+  message: string;
+
 }
 
 interface AddUserRequest {
   name: string;
   email: string;
-  role: 'admin' | 'manager' | 'staff';
+  role:  'admin'|'manager' | 'staff';
   status: 'active' | 'inactive';
   avatarFile?: File;
-  password: string;
+  // password: string;
 }
 
 export const authApi = createApi({ 
@@ -54,32 +92,24 @@ export const authApi = createApi({
         body: credentials,
       }),
     }),
-    getUsers: builder.query<UsersResponse, void>({
-      query: ( ) => '/users',
+      getUsers: builder.query<UsersResponse, { page?: number; limit?: number }>({
+      query: ({ page = 1, limit = 10 } = {}) => ({
+        url: '/users',
+        params: { page, limit },
+      }),
       providesTags: ['User'],
     }),
-    addUser: builder.mutation<User, AddUserRequest>({
-      query: (userData) => {
-        const formData = new FormData();
-        formData.append('name', userData.name);
-        formData.append('email', userData.email);
-        formData.append('role', userData.role);
-        formData.append('status', userData.status);
-        formData.append('password', userData.password);
-        
-        if (userData.avatarFile) {
-          formData.append('avatar', userData.avatarFile);
-        }
-
-        return {
+    addUser: builder.mutation<UserResponse, FormData>({
+      query: (formData) => ({
           url: '/add-user',
           method: 'POST',
           body: formData,
-        };
-      },
+        
+      }),
+     transformErrorResponse: (response: ApiError) => response,
       invalidatesTags: ['User'],
     }),
-    updateUser: builder.mutation<User, { id: string; data: Partial<AddUserRequest> }>({
+    updateUser: builder.mutation<UserResponse, { id: string; data: Partial<AddUserRequest> }>({
       query: ({ id, data }) => {
         const formData = new FormData();
         Object.entries(data).forEach(([key, value]) => {
@@ -94,9 +124,19 @@ export const authApi = createApi({
           body: formData,
         };
       },
+      transformErrorResponse: (response: ApiError) => response,
       invalidatesTags: ['User'],
     }),
-    deleteUser: builder.mutation<void, string>({
+
+     changePassword: builder.mutation<{ message: string }, ChangePasswordRequest>({
+      query: (data) => ({
+        url: '/change-password',
+        method: 'POST',
+        body: data,
+      }),
+    }),
+
+    deleteUser: builder.mutation<{ message: string }, string>({
       query: (id) => ({
         url: `/users/${id}`,
         method: 'DELETE',
@@ -123,4 +163,5 @@ export const {
   useAddUserMutation,
   useUpdateUserMutation,
   useDeleteUserMutation,
+  useChangePasswordMutation,
 } = authApi;

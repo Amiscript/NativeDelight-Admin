@@ -1,12 +1,11 @@
 "use client";
 import React, { useState } from 'react';
 import Image from 'next/image';
-import { Home, Settings, ShoppingCart, Users, Utensils, Tags } from 'lucide-react';
+import { Home, ShoppingCart, Users, Utensils, Tags } from 'lucide-react';
 import Logout from '../components/Logout';
 import Link from 'next/link';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../store/store';
-import { useGetUsersQuery } from '../../store/query/AuthApi';
 
 interface SidebarProps {
   activePath?: string;
@@ -14,41 +13,15 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ activePath }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { token, user: authUser } = useSelector((state: RootState) => state.auth);
+  const { user: currentUser } = useSelector((state: RootState) => state.auth);
   
-  // Fetch users data
-  const { data: usersResponse } = useGetUsersQuery(undefined, {
-    skip: !token,
-  });
-
-  // Define a User type for better type safety
-  interface User {
-    id: string | number;
-    name?: string;
-    email?: string;
-    avatar?: string;
-    // add other properties as needed
-  }
-
-  // Safely get the users array
-  const users: User[] = Array.isArray((usersResponse)?.users)
-    ? (usersResponse).users
-    : [];
-    console.log(users)
-  
-  // Find current user or fall back to authUser
-  const currentUser = Array.isArray(users) 
-    ? users.find((u: User) => u.id === authUser?.id) || authUser
-    : authUser;
-  console.log(currentUser);
-
   const navItems = [
     { path: '/dashboard', icon: Home, label: 'Dashboard' },
     { path: '/management', icon: Utensils, label: 'Management' },
     { path: '/category', icon: Tags, label: 'Categories' },
     { path: '/order', icon: ShoppingCart, label: 'Orders' },
     { path: '/user', icon: Users, label: 'Users' },
-    { path: '/setting', icon: Settings, label: 'Settings' },
+    // { path: '/setting', icon: Settings, label: 'Settings' },
   ];
 
   return (
@@ -98,21 +71,37 @@ const Sidebar: React.FC<SidebarProps> = ({ activePath }) => {
           ))}
         </div>
 
-        <div className="absolute bottom-0 left-0 right-0">
-          <div className="flex items-center space-x-3 p-4 bg-gray-800 text-white rounded-lg">
-            <Image
-              src={currentUser?.avatar || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e"}
-              alt="User"
-              width={40}
-              height={40}
-              className="h-10 w-10 rounded-full"
-            />
-            <div className="flex-1">
-              <p className="text-sm font-medium">{currentUser?.name || 'Admin User'}</p>
-              <p className="text-xs text-gray-400">{currentUser?.email || 'admin@example.com'}</p>
-            </div>
-            <Logout />
-          </div>
+        <div className="absolute bottom-[-4] left-0 right-0  ">
+         <div className="flex items-center space-x-3 p-4 bg-gray-800 text-white rounded-lg">
+  {currentUser?.avatar ? (
+    <Image
+      src={
+        currentUser.avatar.startsWith('http') 
+          ? currentUser.avatar 
+          : `https://res.cloudinary.com/your-cloud-name/image/upload/w_40,h_40,c_fill/${currentUser.avatar}`
+      }
+      alt="User"
+      width={40}
+      height={40}
+      className="h-10 w-10 rounded-full object-cover"
+      onError={(e) => {
+        e.currentTarget.onerror = null;
+        e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser?.name || 'Admin')}&background=random`;
+      }}
+    />
+  ) : (
+    <div className="h-10 w-10 rounded-full bg-gray-600 flex items-center justify-center">
+      <span className="text-sm font-medium">
+        {currentUser?.name?.split(' ').map(n => n[0]).join('') || 'AU'}
+      </span>
+    </div>
+  )}
+  <div className="flex-1">
+    <p className="text-sm font-medium">{currentUser?.name || 'Admin User'}</p>
+    <p className="text-xs text-gray-400">{currentUser?.email || 'admin@example.com'}</p>
+  </div>
+  <Logout />
+</div>
         </div>
       </nav>
 
