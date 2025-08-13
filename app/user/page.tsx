@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useGetUsersQuery, useAddUserMutation, useUpdateUserMutation, useDeleteUserMutation } from '../../store/query/AuthApi';
 import { format } from 'date-fns';
 import Image from 'next/image';
-import { Users, UserCheck, UserMinus, Shield, Download, Plus, Edit, Trash, Ban } from 'lucide-react';
+import { Users, UserCheck, UserMinus, Shield, Plus, Edit, Trash, Ban } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 
 type Role = 'admin' | 'manager' | 'staff';

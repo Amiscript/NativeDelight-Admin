@@ -31,7 +31,7 @@ const EditCategoryModal: React.FC<EditCategoryModalProps> = ({ isOpen, onClose, 
       console.warn('Subcategory already added');
       return;
     }
-    const selectedSub = subcategories.find((sub) => sub._id === selectedSubcategoryId);
+    // const selectedSub = subcategories.find((sub) => sub._id === selectedSubcategoryId);
     setCategory({
       ...category,
       subcategories: [...(category.subcategories || []), selectedSubcategoryId],
