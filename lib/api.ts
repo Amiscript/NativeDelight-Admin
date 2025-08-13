@@ -3,19 +3,12 @@ import { Category, MenuItem } from '@/app/components/ManagementComp/types';
 import axios, { AxiosInstance } from 'axios';
 
 const api: AxiosInstance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'https://native-admin-dashboard-backend.onrender.com',
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-
-// interface summary{
-//   totalProducts: number;
-//   activeItems: number;
-//   inStockItems: number;
-//   outOfStockItems: number;
-// }
 
 interface CategoriesResponse {
   categories: Category[];
