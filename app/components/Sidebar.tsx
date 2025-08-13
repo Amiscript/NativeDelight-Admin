@@ -34,11 +34,13 @@ const Sidebar: React.FC<SidebarProps> = ({ activePath }) => {
   const users: User[] = Array.isArray((usersResponse)?.users)
     ? (usersResponse).users
     : [];
+    console.log(users)
   
   // Find current user or fall back to authUser
   const currentUser = Array.isArray(users) 
     ? users.find((u: User) => u.id === authUser?.id) || authUser
     : authUser;
+  console.log(currentUser);
 
   const navItems = [
     { path: '/dashboard', icon: Home, label: 'Dashboard' },

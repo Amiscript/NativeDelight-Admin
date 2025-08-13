@@ -2,30 +2,25 @@
 import { useState } from 'react';
 import { LogOut } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-// import { useDispatch } from 'react-redux';
-// import { AppDispatch } from '../../store/store';
-
-import { useLogoutMutation } from '../../store/query/AuthApi';
+import { useDispatch } from 'react-redux';
 import { toast } from 'react-toastify';
+import { logout } from '../../store/slices/authSlice';
 
 const Logout = () => {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  // const dispatch = useDispatch<AppDispatch>();
-  const [logoutApi] = useLogoutMutation();
+  const dispatch = useDispatch();
 
-  const handleLogout = async () => {
-    if (!confirm('Are you sure you want to logout?')) return;
-    
+  const handleLogout = () => {
     setIsLoading(true);
     try {
-      await logoutApi().unwrap();
+      dispatch(logout()); 
       toast.success('Logged out successfully');
-      router.push('/login');
+      router.push('/');
     } catch (error) {
-      console.error('Logout failed:', error);
+      console.error('Logout error:', error);
       toast.error('Logout failed. Please try again.');
-  
+      dispatch(logout());
       router.push('/login');
     } finally {
       setIsLoading(false);

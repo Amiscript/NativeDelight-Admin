@@ -2,55 +2,28 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { RootState } from '../store';
 
-interface OverviewStats {
-  todayRevenue: number;
-  totalOrders: number;
-  averageOrder: number;
-  revenueChange: number;
-  ordersChange: number;
-  averageOrderChange: number;
+interface SalesByDay {
+  day: string;
+  totalSales: number;
 }
 
-interface SalesData {
+interface TopItem {
   name: string;
-  value: number;
-}
-
-interface CategoryData {
-  name: string;
-  value: number;
-}
-
-interface HourlyData {
-  hour: string;
-  orders: number;
-}
-
-interface PopularItem {
-  name: string;
-  orders: number;
-}
-
-interface InventoryAlert {
-  id: number;
-  name: string;
-  stock: 'low' | 'out' | 'reorder';
-  quantity?: number;
+  totalOrdered: number;
 }
 
 interface DashboardData {
-  overview: OverviewStats;
-  sales: SalesData[];
-  categories: CategoryData[];
-  hourly: HourlyData[];
-  popularItems: PopularItem[];
-  alerts: InventoryAlert[];
+  dailyRevenue: number;
+  totalOrders: number;
+  averageOrderValue: number;
+  salesByDay: SalesByDay[];
+  topItems: TopItem[];
 }
 
 export const dashboardApi = createApi({
   reducerPath: 'dashboardApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: `${process.env.NEXT_PUBLIC_API_URL}/api/dashboard`,
+    baseUrl: `${process.env.NEXT_PUBLIC_API_URL}/order`,
     prepareHeaders: (headers, { getState }) => {
       const token = (getState() as RootState).auth.token;
       if (token) {
@@ -62,14 +35,12 @@ export const dashboardApi = createApi({
   tagTypes: ['Dashboard'],
   endpoints: (builder) => ({
     getDashboardData: builder.query<DashboardData, {
-      period?: 'week' | 'month' | 'quarter';
-      categoryType?: 'revenue' | 'orders';
+      period?: 'day' | 'month' | 'year';
     }>({
       query: (params) => ({
-        url: '/',
+        url: '/statistics',
         params: {
           period: params.period,
-          category_type: params.categoryType,
         },
       }),
       providesTags: ['Dashboard'],
@@ -82,7 +53,7 @@ export const dashboardApi = createApi({
       invalidatesTags: ['Dashboard'],
     }),
     exportDashboardData: builder.mutation<{ url: string }, {
-      period?: 'week' | 'month' | 'quarter';
+      period?: 'day' | 'month' | 'year';
       format?: 'csv' | 'pdf';
     }>({
       query: (params) => ({
