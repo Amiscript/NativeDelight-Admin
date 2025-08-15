@@ -139,7 +139,7 @@ export const authApi = createApi({
 
     deleteUser: builder.mutation<{ message: string }, string>({
       query: (id) => ({
-        url: `/users/${id}`,
+        url: `/user/${id}`,
         method: 'DELETE',
       }),
       invalidatesTags: ['User'],
