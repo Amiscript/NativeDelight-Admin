@@ -53,7 +53,7 @@ const LoginPage = () => {
       toast.success('Login successful');
       const timeoutId = setTimeout(() => {
         router.push('/dashboard');
-      }, 3000);
+      }, 3000); 
 
       return () => clearTimeout(timeoutId);
 

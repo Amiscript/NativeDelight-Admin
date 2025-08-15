@@ -99,6 +99,7 @@ export const authApi = createApi({
       }),
       providesTags: ['User'],
     }),
+    
     addUser: builder.mutation<UserResponse, FormData>({
       query: (formData) => ({
           url: '/add-user',
