@@ -95,6 +95,8 @@ const handleAddUser = async (e: React.FormEvent) => {
       formData.append('avatar', addUserData.avatarFile);
     }
 
+    console.log(formData, "form data")
+
     await toast.promise(
       addUser(formData).unwrap(),
       {
@@ -120,7 +122,7 @@ const handleAddUser = async (e: React.FormEvent) => {
       }
     );
 
-    // Reset form
+    // Reset form 
     setAddUserData({
       name: '',
       email: '',

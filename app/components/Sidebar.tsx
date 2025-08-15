@@ -14,6 +14,8 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ activePath }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user: currentUser } = useSelector((state: RootState) => state.auth);
+
+  console.log("user", currentUser)
   
   const navItems = [
     { path: '/dashboard', icon: Home, label: 'Dashboard' },

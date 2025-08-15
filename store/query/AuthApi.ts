@@ -99,6 +99,7 @@ export const authApi = createApi({
       }),
       providesTags: ['User'],
     }),
+    
     addUser: builder.mutation<UserResponse, FormData>({
       query: (formData) => ({
           url: '/add-user',
@@ -138,7 +139,7 @@ export const authApi = createApi({
 
     deleteUser: builder.mutation<{ message: string }, string>({
       query: (id) => ({
-        url: `/users/${id}`,
+        url: `/user/${id}`,
         method: 'DELETE',
       }),
       invalidatesTags: ['User'],

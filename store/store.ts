@@ -14,7 +14,7 @@ import { categoryApi } from '../store/query/CategoryApi';
 
    
 const getInitialAuthState = () => {
-  if (typeof window === 'undefined') {
+  if (typeof window === 'undefined') { 
     return {
       user: null,
       token: null,
