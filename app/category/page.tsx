@@ -9,9 +9,10 @@ import CategoryList from '../components/CategoryComponent.tsx/CategoryList';
 import AddCategoryModal from '../components/CategoryComponent.tsx/Modal/AddCategoryModal';
 import DeleteModal from '../components/CategoryComponent.tsx/Modal/DeleteModal';
 import { CategoriesStats, Category, ViewMode, SubCategory, AddNewCategory } from '../components/CategoryComponent.tsx/types';
-import { addcategory, fetchSubcategories, getcategoriesData, updateCategory } from '@/lib/api';
+import { addCategory, fetchSubcategories, getCategoriesData, updateCategory } from '@/lib/api';
 import CategoryStats from '../components/CategoryComponent.tsx/CategoryStats';
 import EditCategoryModal from '../components/CategoryComponent.tsx/Modal/EditCategoryModal ';
+import { toast } from 'react-toastify';
 
 const CategoriesPage: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -61,7 +62,7 @@ const CategoriesPage: React.FC = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const [fetchedCategories, subcategoriesData] = await Promise.all([getcategoriesData(), fetchSubcategories()]);
+        const [fetchedCategories, subcategoriesData] = await Promise.all([getCategoriesData(), fetchSubcategories()]);
         setCategories(fetchedCategories.categories || []);
         setCategoryStats({
           totalCategories: fetchedCategories.totalCategories || 0,
@@ -104,11 +105,20 @@ const CategoriesPage: React.FC = () => {
         console.log(`FormData ${key}:`, value);
       }
 
-      const addedCategory = await addcategory(formData);
+      const addedCategory = await addCategory(formData);
       console.log('API response:', addedCategory);
       setCategories([...categories, addedCategory]);
       setIsAddModalOpen(false);
+      // Success toast
+    toast.success('Category added successfully!', {
+      position: 'top-right',
+      autoClose: 3000,
+    });
     } catch (error) {
+      toast.error('Failed to add category. Please try again.', {
+        position: 'top-right',
+        autoClose: 3000,
+      });
       console.error('Error adding category:', error);
     }
   };
