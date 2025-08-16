@@ -185,7 +185,6 @@
 import { Category, MenuItem } from '@/app/components/ManagementComp/types';
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError } from 'axios';
 
-// Function to get the token from local storage (or another source)
 const getAuthToken = (): string | null => {
   // Adjust this based on where your token is stored (e.g., localStorage, sessionStorage, or cookies)
   return localStorage.getItem('token') || null;
