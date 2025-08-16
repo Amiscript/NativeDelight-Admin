@@ -8,7 +8,9 @@ import MenuFilters from "../components/ManagementComp/MenuFilter";
 import MenuItemForm from "../components/ManagementComp/MenuItemForm";
 import DeleteConfirmationModal from "../components/ManagementComp/DeleteModal";
 import { MenuItem, SubCategory } from "../components/ManagementComp/types";
-import { createMenuItem, deleteProduct, getcategoriesData, getMenuItems, updateProduct } from "@/lib/api";
+import { createMenuItem, deleteProduct, getCategoriesData, getMenuItems, updateProduct } from "@/lib/api";
+import { toast } from 'react-toastify';
+
 
 const MenuManagementPage: React.FC = () => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
@@ -105,7 +107,7 @@ const MenuManagementPage: React.FC = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [items, fetchedCategories] = await Promise.all([getMenuItems(), getcategoriesData()]);
+      const [items, fetchedCategories] = await Promise.all([getMenuItems(), getCategoriesData()]);
 
       const categoriesData = [
         ...(fetchedCategories.categories?.map((cat: any) => ({
@@ -207,9 +209,17 @@ const handleSubmit = async (e: React.FormEvent, isEditing: boolean, item: MenuIt
     let response;
     if (isEditing && item.id) {
       response = await updateProduct({ id: item.id, data: formData });
+      toast.success('Product item updated successfully!', {
+        position: 'top-right',
+        autoClose: 3000,
+  });
       console.log("Updated item from backend:", response);
     } else {
       response = await createMenuItem(formData);
+      toast.success('Product added successfully!', {
+        position: 'top-right',
+        autoClose: 3000,
+  });
       console.log("Created item from backend:", response);
     }
 
