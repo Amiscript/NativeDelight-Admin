@@ -14,8 +14,6 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ activePath }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user: currentUser } = useSelector((state: RootState) => state.auth);
-
-  console.log("user", currentUser)
   
   const navItems = [
     { path: '/dashboard', icon: Home, label: 'Dashboard' },
@@ -73,7 +71,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activePath }) => {
           ))}
         </div>
 
-        <div className="absolute bottom-[-4] left-0 right-0  ">
+        <div className="absolute bottom-[-6] left-0 right-0  ">
          <div className="flex items-center space-x-3 p-4 bg-gray-800 text-white rounded-lg">
   {currentUser?.avatar ? (
     <Image
