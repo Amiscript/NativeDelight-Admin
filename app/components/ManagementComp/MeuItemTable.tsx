@@ -16,7 +16,6 @@ const MenuItemTable: React.FC<MenuItemTableProps> = ({
   onToggleStock 
 }) => {
 
-  console.log(items, "Menu table items");
   return (
     <div className="bg-white rounded-lg shadow overflow-x-auto">
       <table className="min-w-full divide-y divide-gray-200">
@@ -53,7 +52,7 @@ const MenuItemTable: React.FC<MenuItemTableProps> = ({
                 <div className="text-sm text-gray-900">{item.categoryName}</div>
               </td>
               <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                <div className="text-sm text-gray-900">{item.subCategory || "—"}</div>
+                <div className="text-sm text-gray-900">{item.subCategoryName || "—"}</div>
               </td>
               <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                 <div className="text-sm text-gray-900">₦{item.price.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>

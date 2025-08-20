@@ -389,9 +389,20 @@ export const createMenuItem = async (data: FormData) => {
 export const deleteProduct = async (id: string) => {
   try {
     const response = await api.delete(`/product/${id}`);
+    console.log("delete product item", response)
     return response.data;
   } catch (error) {
     console.error('Error deleting product:', error);
+    throw error;
+  }
+};
+
+export const deleteCategory = async (id: string) => {
+  try {
+    const response = await api.delete(`/category/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error deleting category:', error);
     throw error;
   }
 };

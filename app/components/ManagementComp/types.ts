@@ -34,6 +34,7 @@ export interface MenuItem {
   name: string;
   category: string; // Store category name (e.g., "Pizzas pot") or _id if your backend expects it
   subCategory: string; // Store subcategory name (e.g., "Foods")
+  subCategoryName: string;
   price: number;
   status: "active" | "inactive";
   stock: "In Stock" | "Low Stock" | "Out of Stock"; // Adjust based on frontend needs

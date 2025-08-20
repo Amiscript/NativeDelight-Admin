@@ -13,6 +13,7 @@ export interface Order {
   total: number;
   status: string;
   email: string;
+  orderId: string;
   reference: string;
   phone: string;
   createdAt: string;

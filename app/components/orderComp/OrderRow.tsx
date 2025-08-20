@@ -25,7 +25,7 @@ const OrderRow: React.FC<OrderRowProps> = ({
     <React.Fragment>
       <tr className="hover:bg-gray-50 cursor-pointer" onClick={() => onToggleDetails(order._id)}>
         <td className="px-6 py-4 whitespace-nowrap">
-          <div className="text-sm font-medium text-gray-900">{order.reference}</div>
+          <div className="text-sm font-medium text-gray-900">{order.orderId}</div>
         </td>
         <td className="px-6 py-4 whitespace-nowrap">
           <div className="text-sm text-gray-900">{order.email}</div>
