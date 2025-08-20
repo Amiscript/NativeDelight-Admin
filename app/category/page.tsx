@@ -9,7 +9,7 @@ import CategoryList from '../components/CategoryComponent.tsx/CategoryList';
 import AddCategoryModal from '../components/CategoryComponent.tsx/Modal/AddCategoryModal';
 import DeleteModal from '../components/CategoryComponent.tsx/Modal/DeleteModal';
 import { CategoriesStats, Category, ViewMode, SubCategory, AddNewCategory } from '../components/CategoryComponent.tsx/types';
-import { addCategory, fetchSubcategories, getCategoriesData, updateCategory } from '@/lib/api';
+import { addCategory, deleteCategory, fetchSubcategories, getCategoriesData, updateCategory } from '@/lib/api';
 import CategoryStats from '../components/CategoryComponent.tsx/CategoryStats';
 import EditCategoryModal from '../components/CategoryComponent.tsx/Modal/EditCategoryModal ';
 import { toast } from 'react-toastify';
@@ -51,11 +51,24 @@ const CategoriesPage: React.FC = () => {
     setIsDeleteModalOpen(true);
   };
 
-  const confirmDeleteCategory = () => {
+  const confirmDeleteCategory = async () => {
     if (deleteCategoryId !== null) {
-      setCategories(categories.filter((category) => category._id !== deleteCategoryId));
-      setIsDeleteModalOpen(false);
-      setDeleteCategoryId(null);
+      try {
+        await deleteCategory(deleteCategoryId); // Call API to delete
+        setCategories(categories.filter((category) => category._id !== deleteCategoryId)); // Update state
+        setIsDeleteModalOpen(false); // Close modal
+        setDeleteCategoryId(null); // Clear category ID
+        toast.success('Category deleted successfully!', {
+          position: 'top-right',
+          autoClose: 3000,
+        });
+      } catch (error) {
+        toast.error('Failed to delete category. Please try again.', {
+          position: 'top-right',
+          autoClose: 3000,
+        });
+        console.log(error)
+      }
     }
   };
 
@@ -75,14 +88,13 @@ const CategoriesPage: React.FC = () => {
         });
         setSubcategories(subcategoriesData);
       } catch (error) {
-        console.error('Error fetching categories:', error);
+        console.log(error)
       }
     };
 
     fetchCategories();
   }, []);
 
-  console.log("subcategories data", subcategories);
 
   const handleSaveNewCategory = async (newCategory: Omit<AddNewCategory, '_id' | 'createdAt' | 'itemsCount'>) => {
     try {
@@ -101,12 +113,10 @@ const CategoriesPage: React.FC = () => {
       }
 
       // Debug FormData contents
-      for (const [key, value] of formData.entries()) {
-        console.log(`FormData ${key}:`, value);
-      }
+      // for (const [key, value] of formData.entries()) {
+      // }
 
       const addedCategory = await addCategory(formData);
-      console.log('API response:', addedCategory);
       setCategories([...categories, addedCategory]);
       setIsAddModalOpen(false);
       // Success toast
@@ -119,7 +129,7 @@ const CategoriesPage: React.FC = () => {
         position: 'top-right',
         autoClose: 3000,
       });
-      console.error('Error adding category:', error);
+      console.log(error)
     }
   };
 
@@ -138,19 +148,38 @@ const CategoriesPage: React.FC = () => {
       if (updatedCategory.subcategories?.length) {
         formData.append('subcategories', JSON.stringify(updatedCategory.subcategories));
       }
-
+  
       // Debug FormData contents
       for (const [key, value] of formData.entries()) {
         console.log(`FormData ${key}:`, value);
       }
-
+  
       const updated = await updateCategory({ categoryId: updatedCategory._id, data: formData });
-
-      console.log('API response:', updated);
-      setCategories(categories.map((cat) => (cat._id === updatedCategory._id ? updated : cat)));
+  
+      // Map the API response to the Category type
+      const mappedCategory: Category = {
+        _id: updated._id || updatedCategory._id,
+        name: updated.name || updatedCategory.name || 'Unnamed Category', // Fallback
+        description: updated.description || updatedCategory.description || '', // Fallback
+        itemsCount: updated.itemsCount ?? updatedCategory.itemsCount ?? 0,
+        status: updated.status || updatedCategory.status || 'active',
+        createdAt: updated.createdAt || updatedCategory.createdAt || new Date().toISOString(),
+        image: updated.image || updatedCategory.image || { url: '', id: '' },
+        subcategories: updated.subcategories || updatedCategory.subcategories || [],
+      };
+  
+      setCategories(categories.map((cat) => (cat._id === updatedCategory._id ? mappedCategory : cat)));
       setIsEditModalOpen(false);
+      toast.success('Category updated successfully!', {
+        position: 'top-right',
+        autoClose: 3000,
+      });
     } catch (error) {
       console.error('Error updating category:', error);
+      toast.error('Failed to update category. Please try again.', {
+        position: 'top-right',
+        autoClose: 3000,
+      });
     }
   };
 
@@ -163,10 +192,11 @@ const CategoriesPage: React.FC = () => {
     });
   };  
 
+
   const filteredCategories = categories.filter((category) => {
     const matchesSearch =
-      category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      category.description.toLowerCase().includes(searchTerm.toLowerCase());
+      (category.name?.toLowerCase?.()?.includes(searchTerm.toLowerCase()) ?? false) ||
+      (category.description?.toLowerCase?.()?.includes(searchTerm.toLowerCase()) ?? false);
     const matchesStatus = statusFilter === 'All' || category.status === statusFilter;
     return matchesSearch && matchesStatus;
   });

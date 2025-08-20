@@ -16,11 +16,13 @@ const EditCategoryModal: React.FC<EditCategoryModalProps> = ({ isOpen, onClose, 
   const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<string>('');
   const [imageFile, setImageFile] = useState<File | null>(null);
 
+  console.log("subcategories", subcategories)
   useEffect(() => {
     if (initialCategory) {
+      const subIds = initialCategory.subcategories?.map((sub: any) => sub._id || sub) || []; // Extract IDs if objects or keep if strings
       setCategory({
         ...initialCategory,
-        subcategories: initialCategory.subcategories || [],
+        subcategories: Array.from(new Set(subIds)), // Deduplicate and ensure unique IDs
       });
     }
   }, [initialCategory]);

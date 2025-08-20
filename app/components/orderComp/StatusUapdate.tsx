@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Order } from './types';
 import { updateOrderStatus } from '@/lib/api';
+import { toast } from 'react-toastify';
 
 interface StatusUpdatePanelProps {
   order: Order;
@@ -20,8 +21,6 @@ const StatusUpdatePanel: React.FC<StatusUpdatePanelProps> = ({
   const [notes, setNotes] = useState<string>(''); // State for notes
   const [error, setError] = useState<string | null>(null); // State for error messages
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false); // State for loading
-
-  console.log(updatedOrder, "updated order");
 
   // Handle status change in dropdown
   const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -46,13 +45,21 @@ const StatusUpdatePanel: React.FC<StatusUpdatePanelProps> = ({
 
     try {
       const response = await updateOrderStatus(updatedOrder._id, updatedOrder.status);
-      const updatedOrderFromServer = response; // Assuming response.data is the updated order
+      const updatedOrderFromServer = response?.data; // Assuming response.data is the updated order
       setUpdatedOrder(updatedOrderFromServer);
       onSave(updatedOrderFromServer); // Call onSave with the updated order
       onClose(); // Close the panel after successful update
+      toast.success("Order status updated sucessfully", {
+        position: "top-right",
+        autoClose: 3000
+      })
     } catch (error) {
       console.error('Error updating order status:', error);
       setError('Failed to update order status. Please try again.');
+      toast.error("unable to update order status", {
+        position: "top-right",
+        autoClose: 3000
+      })
     } finally {
       setIsSubmitting(false);
     }

@@ -29,12 +29,12 @@ const OrdersPage: React.FC = () => {
     processingOrders: 0,
   });
 
+  console.log(error)
   useEffect(() => {
     try {
       const fetchOrderHistory = async () => {
         const response = await getOrderHistory();
         if (response && response.data) {
-          console.log(response.data, "data");
           setOrders(response.data?.orders || []);
           seetOrderStats({
             totalOrders: response.data.pagination.totalOrders,
@@ -50,10 +50,6 @@ const OrdersPage: React.FC = () => {
       setError(error)
     }
   }, [])
-
-  console.log("order data details", orders)
-
-  console.log(error)
 
 
   const toggleOrderDetails = (orderId: string) => {
@@ -104,11 +100,6 @@ const OrdersPage: React.FC = () => {
     }
     return matchesSearch && matchesStatus && matchesDate;
   });
-
-  // const totalOrders = orders.length;
-  // const pendingOrders = orders.filter(order => order.status === 'Pending').length;
-  // const preparingOrders = orders.filter(order => order.status === 'Preparing').length;
-  // const deliveredOrders = orders.filter(order => order.status === 'Delivered').length;
 
   const currentDate = new Date().toLocaleDateString('en-US', {
     weekday: 'long',

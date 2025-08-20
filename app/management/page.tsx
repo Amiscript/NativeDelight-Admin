@@ -38,70 +38,13 @@ const MenuManagementPage: React.FC = () => {
     category: "",
     categoryName: "",
     subCategory: "",
+    subCategoryName: "",
     price: 0,
     stock: "In Stock",
     image: "",
     description: "",
     status: "active",
   });
-
-  // useEffect(() => {
-  //   const fetchData = async () => {
-  //     try {
-  //       setLoading(true);
-  //       const [items, fetchedCategories] = await Promise.all([getMenuItems(), getcategoriesData()]);
-
-  //       const categoriesData = [
-  //         ...(fetchedCategories.categories?.map((cat: any) => ({
-  //           id: cat._id,
-  //           name: cat.name,
-  //         })) || []),
-  //       ];
-  //       setCategories(categoriesData);
-
-  //       const subCategoriesMap = (fetchedCategories.categories || []).reduce(
-  //         (acc: { [key: string]: SubCategory[] }, cat: any) => {
-  //           acc[cat._id] = cat.subcategories.map((sub: any) => ({
-  //             id: sub._id,
-  //             name: sub.name,
-  //           }));
-  //           return acc;
-  //         },
-  //         {}
-  //       );
-  //       setSubCategories(subCategoriesMap);
-
-  //       const mappedItems = items?.products?.map((product: any) => ({
-  //         id: product._id,
-  //         name: product.name,
-  //         category: product.category?._id || "",
-  //         categoryName: product.category?.name || "",
-  //         price: product.price,
-  //         stock: product.status === "active" ? product.stock : "Out of Stock",
-  //         status: product.status,
-  //         image: product.image,
-  //         description: product.description,
-  //       })) || [];
-  //       setMenuItems(mappedItems);
-
-  //       console.log("mapped item data", mappedItems)
-
-  //       setProductSummary({
-  //         totalProducts: items?.summary?.totalProducts || 0,
-  //         totalActive: items?.summary?.totalActive || 0,
-  //         totalInStock: items?.summary?.totalInStock || 0,
-  //         totalOutOfStock: items?.summary?.totalOutOfStock || 0,
-  //       });
-
-  //       setLoading(false);
-  //     } catch (err) {
-  //       setError("Failed to load menu or categories. Please try again later.");
-  //       setLoading(false);
-  //       console.error("Error fetching menu items or categories:", err);
-  //     }
-  //   };
-  //   fetchData();
-  // }, []);
 
   useEffect(() => {
   const fetchData = async () => {
@@ -129,22 +72,26 @@ const MenuManagementPage: React.FC = () => {
       );
       setSubCategories(subCategoriesMap);
 
-      // Map products to MenuItem type
-      const mappedItems = items.products?.map((product: any) => ({
-        id: product._id,
-        name: product.name,
-        category: product.category?._id || "",
-        categoryName: product.category?.name || "",
-        price: product.price,
-        stock: product.status === "active" ? product.stock : "Out of Stock",
-        status: product.status,
-        image: product.image,
-        description: product.description,
-        subCategory: typeof product.subCategory === "string" ? product.subCategory : "",
-      })) || [];
+      const mappedItems = items.products?.map((product: any) => {
+        const categoryId = product.category?._id || "";
+        const subCatId = typeof product.subCategory === "string" ? product.subCategory : product.subCategory?._id || "";
+        const subCatName = product.subCategory?.name || subCategories[categoryId]?.find((sub: SubCategory) => sub.id === subCatId)?.name || "";
+      
+        return {
+          id: product._id,
+          name: product.name,
+          category: categoryId,
+          categoryName: product.category?.name || "",
+          subCategory: subCatId,
+          subCategoryName: subCatName,
+          price: product.price,
+          stock: product.status === "active" ? product.stock : "Out of Stock",
+          status: product.status,
+          image: product.image,
+          description: product.description,
+        };
+      }) || [];
       setMenuItems(mappedItems);
-
-      console.log("mapped item data", mappedItems);
 
       setProductSummary({
         totalProducts: items.summary?.totalProducts || 0,
@@ -157,11 +104,11 @@ const MenuManagementPage: React.FC = () => {
     } catch (err) {
       setError("Failed to load menu or categories. Please try again later.");
       setLoading(false);
-      console.error("Error fetching menu items or categories:", err);
+      console.log(err)
     }
   };
   fetchData();
-}, []);
+});
 
 const handleSubmit = async (e: React.FormEvent, isEditing: boolean, item: MenuItem) => {
   e.preventDefault();
@@ -204,32 +151,25 @@ const handleSubmit = async (e: React.FormEvent, isEditing: boolean, item: MenuIt
       formData.append("image", blob, "menu-item-image.jpg");
     }
 
-    console.log("FormData for", isEditing ? "update" : "create", ":", Object.fromEntries(formData));
-
     let response;
     if (isEditing && item.id) {
       response = await updateProduct({ id: item.id, data: formData });
-      toast.success('Product item updated successfully!', {
-        position: 'top-right',
-        autoClose: 3000,
-  });
-      console.log("Updated item from backend:", response);
     } else {
       response = await createMenuItem(formData);
-      toast.success('Product added successfully!', {
-        position: 'top-right',
-        autoClose: 3000,
-  });
-      console.log("Created item from backend:", response);
     }
 
     // Map backend response to MenuItem type
+    const categoryId = response.product?.category?._id || item.category;
+    const subCatId = response.product?.subCategory?._id || (typeof response.product?.subCategory === "string" ? response.product?.subCategory : item.subCategory);
+    const subCatName = response.product?.subCategory?.name || subCategories[categoryId]?.find((sub: SubCategory) => sub.id === subCatId)?.name || "";
+
     const mappedItem: MenuItem = {
       id: response.product?._id || response._id,
       name: response.product?.name || item.name,
-      category: response.product?.category?._id || item.category,
+      category: categoryId,
       categoryName: response.product?.category?.name || categories.find((cat) => cat.id === item.category)?.name || item.categoryName || "",
-      subCategory: response.product?.subCategory?._id || item.subCategory,
+      subCategory: subCatId,
+      subCategoryName: subCatName,
       price: response.product?.price || item.price,
       stock: response.product?.stock || item.stock,
       status: response.product?.status || item.status || "active",
@@ -240,17 +180,16 @@ const handleSubmit = async (e: React.FormEvent, isEditing: boolean, item: MenuIt
     // Update state based on operation
     if (isEditing) {
       setMenuItems((prev) =>
-        prev.map((i) =>
-          i.id === mappedItem.id ? mappedItem : i
-        )
+        prev.map((i) => (i.id === mappedItem.id ? mappedItem : i))
       );
     } else {
-      setMenuItems([...menuItems, mappedItem]);
+      setMenuItems((prev) => [...prev, mappedItem]);
       setNewItem({
         name: "",
         category: "",
         categoryName: "",
         subCategory: "",
+        subCategoryName: "",
         price: 0,
         status: "active",
         stock: "In Stock",
@@ -261,29 +200,43 @@ const handleSubmit = async (e: React.FormEvent, isEditing: boolean, item: MenuIt
 
     setIsModalOpen(false);
     setEditItem(null);
-    setLoading(false);
+    toast.success(`${isEditing ? 'Product item updated' : 'Product added'} successfully!`, {
+      position: 'top-right',
+      autoClose: 3000,
+    });
   } catch (err: any) {
     setError(`Failed to ${isEditing ? "update" : "add"} menu item: ${err.message}`);
-    setLoading(false);
     console.error(`Error ${isEditing ? "updating" : "adding"} menu item:`, {
       message: err.message,
       response: err.response?.data,
       status: err.response?.status,
     });
+  } finally {
+    setLoading(false); // Ensure loading is reset even on error
   }
 };
   
   const handleDelete = async (id: string) => {
-    try {
+    try { 
       setLoading(true);
-      await deleteProduct(id);
-      setMenuItems((prev) => prev.filter((item) => item.id !== id));
-      setIsDeleteModalOpen(false);
-      setLoading(false);
+      console.log("Starting deletion for ID:", id); // Debug: Confirm ID
+      const response = await deleteProduct(id);
+      console.log("deleteProduct response:", response); // Debug: Log API response 
+      setMenuItems((prev) => {
+        const updatedItems = prev.filter((item) => item.id !== id);
+        return updatedItems;
+      });
+      setIsDeleteModalOpen(false); // Close the delete modal
+      setDeleteModalItem(null); // Clear the delete modal item
+      toast.success('Product deleted successfully!', {
+        position: 'top-right',
+        autoClose: 3000,
+      });
     } catch (err) {
       setError("Failed to delete menu item. Please try again.");
-      setLoading(false);
-      console.error("Error deleting menu item:", err);
+      console.log(err)
+    } finally {
+      setLoading(false); // Ensure loading is reset
     }
   };
 
@@ -321,8 +274,6 @@ const handleSubmit = async (e: React.FormEvent, isEditing: boolean, item: MenuIt
     const matchesCategory = selectedCategory === "All" || item.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
-
-  console.log("filtered items", filteredItems)
 
   const currentDate = new Date().toLocaleDateString("en-US", {
     weekday: "long",
@@ -434,18 +385,35 @@ const handleSubmit = async (e: React.FormEvent, isEditing: boolean, item: MenuIt
         </div>
       )}
 
-      <DeleteConfirmationModal
-        isOpen={isDeleteModalOpen}
-        item={deleteModalItem}
-        onClose={() => setIsDeleteModalOpen(false)}
-        onConfirm={() => {
-  if (deleteModalItem && deleteModalItem.id) {
-    handleDelete(deleteModalItem.id);
-  }
-}}
-        // onConfirm={() => deleteModalItem && handleDelete(deleteModalItem.id)}
-      />
-    </div>
+{/* <DeleteConfirmationModal
+  isOpen={isDeleteModalOpen}
+  item={deleteModalItem}
+  onClose={() => {
+    setIsDeleteModalOpen(false);
+    setDeleteModalItem(null); // Clear the item to prevent stale data
+  }}
+  
+  onConfirm={() => {
+    if (deleteModalItem && deleteModalItem.id) {
+      handleDelete(deleteModalItem.id);
+    }
+  }}
+/> */}
+
+<DeleteConfirmationModal
+  isOpen={isDeleteModalOpen}
+  item={deleteModalItem}
+  onClose={() => {
+    setIsDeleteModalOpen(false);
+    setDeleteModalItem(null); // Clear the item to prevent stale data
+  }}
+  onConfirm={() => {
+    if (deleteModalItem && deleteModalItem.id) {
+      handleDelete(deleteModalItem.id); // Rely on handleDelete for state updates
+    }
+  }}
+/> 
+</div>
   );
 };
 

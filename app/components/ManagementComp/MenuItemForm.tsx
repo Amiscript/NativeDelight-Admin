@@ -25,6 +25,7 @@ const MenuItemForm: React.FC<MenuItemFormProps> = ({
   isEditing = false,
   loading,
 }) => {
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     onItemChange({

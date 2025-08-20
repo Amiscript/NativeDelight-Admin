@@ -7,7 +7,9 @@ interface OrderDetailsProps {
   onPrintReceipt: () => void;
 }
 
+
 const OrderDetails: React.FC<OrderDetailsProps> = ({ items, total, onPrintReceipt }) => {
+
   return (
     <div className="border-t border-gray-200 pt-4">
       <h4 className="text-sm font-medium text-gray-900 mb-2">Order Details</h4>
@@ -33,7 +35,7 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ items, total, onPrintReceip
             {items.map((item, index) => (
               <tr key={index}>
                 <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
-                  {item.name}
+                  {item.productName}
                 </td>
                 <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
                   {item.quantity}
