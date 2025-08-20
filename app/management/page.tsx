@@ -108,7 +108,7 @@ const MenuManagementPage: React.FC = () => {
     }
   };
   fetchData();
-});
+}, []);
 
 const handleSubmit = async (e: React.FormEvent, isEditing: boolean, item: MenuItem) => {
   e.preventDefault();
