@@ -129,7 +129,7 @@ const CategoriesPage: React.FC = () => {
         position: 'top-right',
         autoClose: 3000,
       });
-      console.log(error)
+      console.log(error) 
     }
   };
 
