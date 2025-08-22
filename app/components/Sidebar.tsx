@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from 'react';
 import Image from 'next/image';
-import { Home, ShoppingCart, Users, Utensils, Tags } from 'lucide-react';
+import { Home, ShoppingCart, Users, Utensils, Tags, Wrench } from 'lucide-react';
 import Logout from '../components/Logout';
 import Link from 'next/link';
 import { useSelector } from 'react-redux';
@@ -19,6 +19,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activePath }) => {
     { path: '/dashboard', icon: Home, label: 'Dashboard' },
     { path: '/management', icon: Utensils, label: 'Management' },
     { path: '/category', icon: Tags, label: 'Categories' },
+    {path: '/subcategory', icon: Wrench, label: "Subcategories"},
     { path: '/order', icon: ShoppingCart, label: 'Orders' },
     { path: '/user', icon: Users, label: 'Users' },
     // { path: '/setting', icon: Settings, label: 'Settings' },
@@ -111,7 +112,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activePath }) => {
           className="fixed inset-0 bg-black bg-opacity-30 z-20 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
-      )}
+      )}  
     </>
   );
 };
